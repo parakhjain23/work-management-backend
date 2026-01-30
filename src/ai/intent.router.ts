@@ -101,11 +101,17 @@ export class IntentRouter {
    * Validate threadId scope
    */
   private validateThreadScope(threadId: string, intent: IntentType, payload: any): ValidationResult {
+    // Allow any threadId format - validation is optional
+    if (!threadId || threadId.trim() === '') {
+      return { valid: false, error: 'threadId is required' };
+    }
+
     // Parse threadId format: "org:1:global" or "workItem:123"
     const parts = threadId.split(':');
     
+    // If threadId doesn't follow structured format, allow it (e.g., "thread_123")
     if (parts.length < 2) {
-      return { valid: false, error: 'Invalid threadId format' };
+      return { valid: true };
     }
 
     const scopeType = parts[0];

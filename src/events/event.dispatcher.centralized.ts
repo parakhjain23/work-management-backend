@@ -44,7 +44,7 @@ export class CentralizedEventDispatcher {
   }
 
   /**
-   * Purpose: Emit event to all subscribers
+   * Purpose: Emit event to RabbitMQ exchange
    * This is the ONLY method that should be called to emit events
    * 
    * @param event - Standard event object
@@ -60,13 +60,14 @@ export class CentralizedEventDispatcher {
       // Log event
       console.log('[Event Dispatcher] Event emitted:', JSON.stringify(loggableEvent, null, 2));
 
-      // Fan out to subscribers (async, don't block)
+      // Publish to RabbitMQ exchange (async, don't block)
       setImmediate(async () => {
         try {
-          await this.fanOut(event);
+          const { publishDomainEvent } = await import('./event.publisher.js');
+          await publishDomainEvent(event);
         } catch (error) {
-          console.error('[Event Dispatcher] Fan-out error:', error);
-          // Don't throw - event consumers must be resilient
+          console.error('[Event Dispatcher] Failed to publish event:', error);
+          // Don't throw - event publishing must not break API response
         }
       });
     } catch (error) {
@@ -127,65 +128,6 @@ export class CentralizedEventDispatcher {
     };
   }
 
-  /**
-   * Purpose: Fan out event to all subscribers
-   * Calls system prompt runner and RAG producer (placeholders for now)
-   */
-  private async fanOut(event: StandardEvent): Promise<void> {
-    // 1. System Prompt Runner (placeholder)
-    await this.triggerSystemPrompts(event);
-
-    // 2. RAG Producer (placeholder)
-    await this.triggerRagProducer(event);
-
-    // 3. Future: Analytics, webhooks, notifications, etc.
-  }
-
-  /**
-   * Purpose: Trigger system prompts based on event (PLACEHOLDER)
-   * Will be implemented when system prompts are ready
-   */
-  private async triggerSystemPrompts(event: StandardEvent): Promise<void> {
-    try {
-      console.log('[Event Dispatcher → System Prompts] Would process:', {
-        entity: event.entity,
-        action: event.action,
-        entity_id: event.entity_id.toString(),
-        changed_fields: event.changed_fields
-      });
-
-      // PLACEHOLDER: No actual execution yet
-      // Future: Query system_prompts table and execute matching prompts
-    } catch (error) {
-      console.error('[Event Dispatcher → System Prompts] Error:', error);
-    }
-  }
-
-  /**
-   * Purpose: Trigger RAG indexing based on event (PLACEHOLDER)
-   * Will be implemented when RAG is ready
-   */
-  private async triggerRagProducer(event: StandardEvent): Promise<void> {
-    try {
-      // Only trigger RAG for work_item and related entities
-      if (event.entity === 'work_item' || 
-          event.entity === 'custom_field_value' ||
-          event.entity === 'category' ||
-          event.entity === 'custom_field') {
-        
-        console.log('[Event Dispatcher → RAG Producer] Would index:', {
-          entity: event.entity,
-          action: event.action,
-          entity_id: event.entity_id.toString()
-        });
-
-        // PLACEHOLDER: No actual RAG API calls yet
-        // Future: Call RAG Producer to index/update/delete
-      }
-    } catch (error) {
-      console.error('[Event Dispatcher → RAG Producer] Error:', error);
-    }
-  }
 
   /**
    * Purpose: Helper to create work_item event

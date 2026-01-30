@@ -234,10 +234,21 @@ export class WorkItemsService {
 
   /**
    * Purpose: Delete work item and emit deletion event
+   * Deletes related logs and custom field values first (cascade)
    */
   async delete(workItemId: bigint, orgId: bigint) {
     const workItem = await this.findById(workItemId, orgId);
 
+    // Delete related records first (cascade)
+    await this.prisma.workItemLog.deleteMany({
+      where: { workItemId: workItem.id }
+    });
+
+    await this.prisma.customFieldValue.deleteMany({
+      where: { workItemId: workItem.id }
+    });
+
+    // Now delete the work item
     await this.prisma.workItem.delete({
       where: { id: workItem.id }
     });

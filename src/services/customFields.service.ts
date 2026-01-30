@@ -22,8 +22,35 @@ export interface UpdateCustomFieldValuesDto {
   [keyName: string]: any;
 }
 
+export interface CreateFromExistingDto {
+  sourceFieldId: bigint;
+  name?: string;
+  keyName?: string;
+  description?: string;
+}
+
 export class CustomFieldsService {
   private prisma = getPrismaClient();
+
+  /**
+   * Purpose: Get all custom fields across all categories for an organization
+   * Used for browsing and selecting existing custom fields to reuse
+   */
+  async findAllMeta(orgId: bigint) {
+    return await this.prisma.customFieldMetaData.findMany({
+      where: { orgId },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            keyName: true
+          }
+        }
+      },
+      orderBy: { name: 'asc' }
+    });
+  }
 
   async findMetaByCategory(categoryId: bigint, orgId: bigint) {
     const category = await this.prisma.category.findFirst({
@@ -65,11 +92,11 @@ export class CustomFieldsService {
     }
 
     const existing = await this.prisma.customFieldMetaData.findFirst({
-      where: { orgId, keyName: data.keyName }
+      where: { categoryId, keyName: data.keyName }
     });
 
     if (existing) {
-      throw new Error('Custom field with this key_name already exists');
+      throw new Error('Custom field with this key_name already exists in this category');
     }
 
     const field = await this.prisma.customFieldMetaData.create({
@@ -82,6 +109,72 @@ export class CustomFieldsService {
         description: data.description,
         enums: data.enums,
         meta: data.meta,
+        createdBy: userId,
+        updatedBy: userId
+      }
+    });
+
+    // Emit event after successful DB mutation
+    await eventDispatcher.emit(
+      CentralizedEventDispatcher.customFieldEvent(
+        'create',
+        field.id,
+        'user',
+        ['name', 'key_name', 'data_type']
+      )
+    );
+
+    return field;
+  }
+
+  /**
+   * Purpose: Create custom field by copying from existing field
+   * Allows reusing custom field definitions across categories
+   */
+  async createMetaFromExisting(categoryId: bigint, orgId: bigint, userId: bigint, data: CreateFromExistingDto) {
+    // Verify target category exists
+    const category = await this.prisma.category.findFirst({
+      where: { id: categoryId, orgId }
+    });
+
+    if (!category) {
+      throw new Error('Category not found');
+    }
+
+    // Get source custom field
+    const sourceField = await this.prisma.customFieldMetaData.findFirst({
+      where: { id: data.sourceFieldId, orgId }
+    });
+
+    if (!sourceField) {
+      throw new Error('Source custom field not found');
+    }
+
+    // Use provided values or copy from source
+    const name = data.name || sourceField.name;
+    const keyName = data.keyName || sourceField.keyName;
+    const description = data.description || sourceField.description;
+
+    // Check if keyName already exists in this category
+    const existing = await this.prisma.customFieldMetaData.findFirst({
+      where: { categoryId, keyName }
+    });
+
+    if (existing) {
+      throw new Error('Custom field with this key_name already exists in this category');
+    }
+
+    // Create new custom field with copied definition
+    const field = await this.prisma.customFieldMetaData.create({
+      data: {
+        orgId,
+        categoryId,
+        name,
+        keyName,
+        dataType: sourceField.dataType,
+        description,
+        enums: sourceField.enums,
+        meta: sourceField.meta as any,
         createdBy: userId,
         updatedBy: userId
       }
@@ -153,6 +246,9 @@ export class CustomFieldsService {
       where: {
         id: workItemId,
         category: { orgId }
+      },
+      include: {
+        category: true
       }
     });
 
@@ -160,41 +256,64 @@ export class CustomFieldsService {
       throw new Error('Work item not found');
     }
 
-    const values = await this.prisma.customFieldValue.findMany({
+    // Get all custom fields defined for this work item's category
+    const categoryFields = await this.prisma.customFieldMetaData.findMany({
+      where: { categoryId: workItem.categoryId },
+      orderBy: { name: 'asc' }
+    });
+
+    // Get existing values for this work item
+    const existingValues = await this.prisma.customFieldValue.findMany({
       where: { workItemId },
       include: {
-        customFieldMetaData: {
-          select: {
-            id: true,
-            name: true,
-            keyName: true,
-            dataType: true,
-            description: true,
-            enums: true,
-            meta: true
-          }
-        }
+        customFieldMetaData: true
       }
     });
 
-    const result: any = {};
-    for (const value of values) {
-      const keyName = value.customFieldMetaData.keyName;
-      switch (value.customFieldMetaData.dataType) {
-        case DataType.number:
-          result[keyName] = value.valueNumber ? Number(value.valueNumber) : null;
-          break;
-        case DataType.text:
-          result[keyName] = value.valueText;
-          break;
-        case DataType.boolean:
-          result[keyName] = value.valueBoolean;
-          break;
-        case DataType.json:
-          result[keyName] = value.valueJson;
-          break;
-      }
+    // Create a map of existing values by customFieldMetaDataId
+    const valueMap = new Map();
+    for (const value of existingValues) {
+      valueMap.set(value.customFieldMetaDataId.toString(), value);
     }
+
+    // Build result array with all category fields
+    const result = categoryFields.map(field => {
+      const existingValue = valueMap.get(field.id.toString());
+      
+      let value = null;
+      if (existingValue) {
+        switch (field.dataType) {
+          case DataType.number:
+            value = existingValue.valueNumber ? Number(existingValue.valueNumber) : null;
+            break;
+          case DataType.text:
+            value = existingValue.valueText;
+            break;
+          case DataType.boolean:
+            value = existingValue.valueBoolean;
+            break;
+          case DataType.json:
+            value = existingValue.valueJson;
+            break;
+        }
+      }
+
+      return {
+        id: existingValue?.id || null,
+        workItemId: workItemId,
+        customFieldMetaDataId: field.id,
+        value: value,
+        customFieldMetaData: {
+          id: field.id,
+          name: field.name,
+          keyName: field.keyName,
+          dataType: field.dataType,
+          description: field.description,
+          enums: field.enums,
+          meta: field.meta
+        }
+      };
+    });
 
     return result;
   }

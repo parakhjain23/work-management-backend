@@ -1,5 +1,5 @@
 import amqp, { Channel, Connection } from 'amqplib';
-import { RAG_QUEUE_NAME } from './queue.types.js';
+import { DOMAIN_EVENTS_EXCHANGE, RAG_QUEUE_NAME, SYSTEMPROMPT_QUEUE_NAME } from './queue.types.js';
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
 
@@ -7,8 +7,8 @@ let connection: Connection | null = null;
 let channel: Channel | null = null;
 
 /**
- * Purpose: Establish connection to RabbitMQ server
- * Creates connection and channel, asserts durable queue
+ * Purpose: Establish connection to RabbitMQ server with EXCHANGE pattern
+ * Creates exchange, queues, and bindings for multi-consumer architecture
  */
 export async function connectRabbitMQ(): Promise<void> {
   try {
@@ -22,12 +22,26 @@ export async function connectRabbitMQ(): Promise<void> {
     connection = await amqp.connect(RABBITMQ_URL);
     channel = await connection.createChannel();
 
-    // Assert durable queue
+    // Assert exchange (topic type for future routing flexibility)
+    await channel.assertExchange(DOMAIN_EVENTS_EXCHANGE, 'topic', {
+      durable: true,
+    });
+
+    // Assert RAG queue
     await channel.assertQueue(RAG_QUEUE_NAME, {
       durable: true,
     });
 
-    console.log(`[RabbitMQ] Connected and queue '${RAG_QUEUE_NAME}' asserted`);
+    // Assert System Prompt queue
+    await channel.assertQueue(SYSTEMPROMPT_QUEUE_NAME, {
+      durable: true,
+    });
+
+    // Bind queues to exchange (broadcast all events for now)
+    await channel.bindQueue(RAG_QUEUE_NAME, DOMAIN_EVENTS_EXCHANGE, '#');
+    await channel.bindQueue(SYSTEMPROMPT_QUEUE_NAME, DOMAIN_EVENTS_EXCHANGE, '#');
+
+    console.log(`[RabbitMQ] Connected - Exchange '${DOMAIN_EVENTS_EXCHANGE}' with queues bound`);
 
     // Handle connection errors
     connection.on('error', (err: Error) => {

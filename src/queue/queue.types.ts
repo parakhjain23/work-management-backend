@@ -7,4 +7,7 @@ export type RagQueueMessage = {
   timestamp: string;
 };
 
+// Exchange and Queue Names
+export const DOMAIN_EVENTS_EXCHANGE = 'domain.events';
 export const RAG_QUEUE_NAME = 'rag.index.queue';
+export const SYSTEMPROMPT_QUEUE_NAME = 'systemprompt.execute.queue';

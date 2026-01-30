@@ -142,7 +142,7 @@ CREATE TABLE custom_field_meta_data (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (org_id, key_name),
+    UNIQUE (org_id , category_id, key_name),
     FOREIGN KEY (org_id) REFERENCES organizations(id),
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );

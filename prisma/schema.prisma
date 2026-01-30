@@ -119,7 +119,7 @@ model CustomFieldMetaData {
   category    Category    @relation(fields: [categoryId], references: [id])
   customFieldValues CustomFieldValue[]
 
-  @@unique([orgId, keyName])
+  @@unique([orgId, categoryId, keyName])
   @@map("custom_field_meta_data")
 }
 

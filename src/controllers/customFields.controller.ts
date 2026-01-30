@@ -5,6 +5,28 @@ import { serializeBigInt } from '../utils/bigint.serializer.js';
 
 const customFieldsService = new CustomFieldsService();
 
+/**
+ * Purpose: Get all custom fields across all categories
+ * Used for browsing and selecting existing custom fields to reuse
+ */
+export const getAllCustomFields = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const orgId = BigInt(req.user!.org_id);
+
+    const fields = await customFieldsService.findAllMeta(orgId);
+
+    res.json({
+      success: true,
+      data: serializeBigInt(fields)
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch custom fields'
+    });
+  }
+};
+
 export const getCustomFieldsByCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const categoryIdParam = req.params.categoryId;
@@ -95,7 +117,7 @@ export const createCustomField = async (req: Request, res: Response): Promise<vo
     
     res.status(201).json({
       success: true,
-      data: field
+      data: serializeBigInt(field)
     });
   } catch (error) {
     let status = 500;
@@ -106,6 +128,55 @@ export const createCustomField = async (req: Request, res: Response): Promise<vo
     res.status(status).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create custom field'
+    });
+  }
+};
+
+/**
+ * Purpose: Create custom field by copying from existing field
+ * Allows reusing custom field definitions across categories
+ */
+export const createCustomFieldFromExisting = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const categoryIdParam = req.params.categoryId;
+    if (Array.isArray(categoryIdParam)) {
+      res.status(400).json({ success: false, error: 'Invalid category ID' });
+      return;
+    }
+    const categoryId = BigInt(categoryIdParam);
+    const { sourceFieldId, name, keyName, description } = req.body;
+
+    if (!sourceFieldId) {
+      res.status(400).json({
+        success: false,
+        error: 'sourceFieldId is required'
+      });
+      return;
+    }
+
+    const orgId = BigInt(req.user!.org_id);
+    const userId = BigInt(req.user!.id);
+
+    const field = await customFieldsService.createMetaFromExisting(categoryId, orgId, userId, {
+      sourceFieldId: BigInt(sourceFieldId),
+      name,
+      keyName,
+      description
+    });
+    
+    res.status(201).json({
+      success: true,
+      data: serializeBigInt(field)
+    });
+  } catch (error) {
+    let status = 500;
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) status = 404;
+      if (error.message.includes('already exists')) status = 409;
+    }
+    res.status(status).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create custom field from existing'
     });
   }
 };
