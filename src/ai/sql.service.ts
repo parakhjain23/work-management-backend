@@ -1,6 +1,5 @@
 import { getPrismaClient } from '../db/prisma.js';
 import { SqlValidator } from './sql.validator.js';
-import { EventLogger } from '../events/event.logger.js';
 import { ScopeValidator, ThreadScope } from './scope.validator.js';
 import { InvariantGuard } from './invariant.guard.js';
 
@@ -17,13 +16,11 @@ export class SqlService {
   private validator: SqlValidator;
   private scopeValidator: ScopeValidator;
   private invariantGuard: InvariantGuard;
-  private eventLogger: EventLogger;
 
   constructor() {
     this.validator = new SqlValidator();
     this.scopeValidator = new ScopeValidator();
     this.invariantGuard = new InvariantGuard();
-    this.eventLogger = new EventLogger();
   }
 
   public async executeSql(sql: string, threadId?: string): Promise<SqlExecutionResult> {
@@ -121,38 +118,4 @@ export class SqlService {
     return data;
   }
 
-  private async executeMutation(sql: string, statementType: 'INSERT' | 'UPDATE' | 'DELETE'): Promise<SqlExecutionResult> {
-    const prisma = getPrismaClient();
-    
-    const result = await prisma.$executeRawUnsafe(sql);
-    
-    const rowsAffected = typeof result === 'number' ? result : 0;
-    
-    await this.eventLogger.logMutation(sql, result);
-    
-    const returnedIds = this.extractIds(sql);
-    
-    return {
-      success: true,
-      type: 'MUTATION',
-      rowsAffected,
-      returnedIds: returnedIds.length > 0 ? returnedIds : undefined
-    };
-  }
-
-  private extractIds(sql: string): (number | bigint)[] {
-    const ids: (number | bigint)[] = [];
-    
-    const idMatch = sql.match(/id\s*=\s*(\d+)/gi);
-    if (idMatch) {
-      idMatch.forEach(match => {
-        const numMatch = match.match(/\d+/);
-        if (numMatch) {
-          ids.push(parseInt(numMatch[0], 10));
-        }
-      });
-    }
-    
-    return ids;
-  }
 }
