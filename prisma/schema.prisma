@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id         BigInt      @id @default(autoincrement())
+  name       String      @db.VarChar(255)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  categories Category[]
+  customFieldMetaData CustomFieldMetaData[]
+
+  @@map("organizations")
+}
+
+model Category {
+  id           BigInt       @id @default(autoincrement())
+  orgId        BigInt       @map("org_id")
+  keyName      String       @map("key_name") @db.VarChar(255)
+  externalTool String?      @map("external_tool") @db.VarChar(100)
+  name         String       @db.VarChar(255)
+  createdBy    BigInt?      @map("created_by")
+  updatedBy    BigInt?      @map("updated_by")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  
+  organization Organization @relation(fields: [orgId], references: [id])
+  workItems    WorkItem[]
+  followers    CategoryFollower[]
+  customFieldMetaData CustomFieldMetaData[]
+
+  @@unique([orgId, keyName])
+  @@map("categories")
+}
+
+model WorkItem {
+  id          BigInt       @id @default(autoincrement())
+  externalId  String?      @map("external_id") @db.VarChar(255)
+  categoryId  BigInt       @map("category_id")
+  title       String       @db.VarChar(500)
+  description String?      @db.Text
+  status      WorkItemStatus @default(CAPTURED)
+  priority    WorkItemPriority?
+  assigneeId  BigInt?      @map("assignee_id")
+  createdBy   BigInt?      @map("created_by")
+  updatedBy   BigInt?      @map("updated_by")
+  startDate   DateTime?    @map("start_date") @db.Date
+  dueDate     DateTime?    @map("due_date") @db.Date
+  parentId    BigInt?      @map("parent_id")
+  rootParentId BigInt?     @map("root_parent_id")
+  docId       String?      @map("doc_id") @db.VarChar(255)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  category    Category     @relation(fields: [categoryId], references: [id])
+  parent      WorkItem?    @relation("WorkItemHierarchy", fields: [parentId], references: [id])
+  children    WorkItem[]   @relation("WorkItemHierarchy")
+  rootParent  WorkItem?    @relation("WorkItemRootHierarchy", fields: [rootParentId], references: [id])
+  rootChildren WorkItem[]  @relation("WorkItemRootHierarchy")
+  logs        WorkItemLog[]
+  customFieldValues CustomFieldValue[]
+
+  @@index([categoryId], name: "idx_work_items_category")
+  @@index([status], name: "idx_work_items_status")
+  @@index([assigneeId], name: "idx_work_items_assignee")
+  @@index([parentId], name: "idx_work_items_parent")
+  @@index([rootParentId], name: "idx_work_items_root_parent")
+  @@index([docId], name: "idx_work_items_doc")
+  @@map("work_items")
+}
+
+model WorkItemLog {
+  id         BigInt      @id @default(autoincrement())
+  workItemId BigInt      @map("work_item_id")
+  logType    LogType     @map("log_type")
+  oldValue   String?     @map("old_value") @db.Text
+  newValue   String?     @map("new_value") @db.Text
+  message    String?     @db.Text
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  workItem   WorkItem    @relation(fields: [workItemId], references: [id])
+
+  @@map("work_item_logs")
+}
+
+model CategoryFollower {
+  id         BigInt      @id @default(autoincrement())
+  categoryId BigInt      @map("category_id")
+  userId     BigInt      @map("user_id")
+  followedAt DateTime    @default(now()) @map("followed_at")
+
+  category   Category    @relation(fields: [categoryId], references: [id])
+
+  @@unique([categoryId, userId])
+  @@map("category_followers")
+}
+
+model CustomFieldMetaData {
+  id          BigInt      @id @default(autoincrement())
+  orgId       BigInt      @map("org_id")
+  categoryId  BigInt      @map("category_id")
+  name        String      @db.VarChar(255)
+  keyName     String      @map("key_name") @db.VarChar(255)
+  dataType    DataType    @map("data_type")
+  enums       String?     @db.Text
+  description String?     @db.Text
+  meta        Json?
+  createdBy   BigInt?     @map("created_by")
+  updatedBy   BigInt?     @map("updated_by")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  category    Category    @relation(fields: [categoryId], references: [id])
+  customFieldValues CustomFieldValue[]
+
+  @@unique([orgId, keyName])
+  @@map("custom_field_meta_data")
+}
+
+model CustomFieldValue {
+  id                    BigInt      @id @default(autoincrement())
+  workItemId            BigInt      @map("work_item_id")
+  customFieldMetaDataId BigInt      @map("custom_field_meta_data_id")
+  valueNumber           Decimal?    @map("value_number") @db.Decimal(15, 4)
+  valueText             String?     @map("value_text") @db.Text
+  valueBoolean          Boolean?    @map("value_boolean")
+  valueJson             Json?       @map("value_json")
+  calculatedBy          CalculatedBy @default(ai) @map("calculated_by")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  workItem              WorkItem    @relation(fields: [workItemId], references: [id])
+  customFieldMetaData   CustomFieldMetaData @relation(fields: [customFieldMetaDataId], references: [id])
+
+  @@unique([workItemId, customFieldMetaDataId])
+  @@index([customFieldMetaDataId], name: "idx_custom_field_values_field")
+  @@index([workItemId], name: "idx_custom_field_values_work_item")
+  @@map("custom_field_values")
+}
+
+enum WorkItemStatus {
+  CAPTURED
+  CLARIFYING
+  THINKING
+  DECIDED
+  IN_PROGRESS
+  IN_REVIEW
+  CLOSED
+  ARCHIVED
+}
+
+enum WorkItemPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum LogType {
+  status_change
+  comment
+  sync
+  ai_analysis
+  field_update
+}
+
+enum DataType {
+  number
+  text
+  boolean
+  json
+}
+
+enum CalculatedBy {
+  ai
+  user
+  system
+}
+
+model SystemPrompt {
+  id          BigInt      @id @default(autoincrement())
+  name        String      @db.VarChar(255)
+  description String?     @db.Text
+  promptText  String      @map("prompt_text") @db.Text
+  createdAt   DateTime    @default(now()) @map("created_at")
+  isActive    Boolean     @default(true) @map("is_active")
+  
+  rules       SystemPromptRule[]
+
+  @@map("system_prompts")
+}
+
+model SystemPromptRule {
+  id               BigInt        @id @default(autoincrement())
+  eventType        String        @map("event_type") @db.VarChar(50)
+  entityType       String        @map("entity_type") @db.VarChar(50)
+  fieldName        String?       @map("field_name") @db.VarChar(100)
+  systemPromptId   BigInt        @map("system_prompt_id")
+  priority         Int           @default(100)
+  isActive         Boolean       @default(true) @map("is_active")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  
+  systemPrompt     SystemPrompt  @relation(fields: [systemPromptId], references: [id])
+
+  @@index([eventType, entityType], name: "idx_prompt_rules_event")
+  @@index([systemPromptId], name: "idx_prompt_rules_prompt")
+  @@map("system_prompt_rules")
+}
+
+model SystemPromptExecution {
+  id               BigInt      @id @default(autoincrement())
+  eventId          BigInt?     @map("event_id")
+  ruleId           BigInt      @map("rule_id")
+  promptId         BigInt      @map("prompt_id")
+  sqlGenerated     String?     @map("sql_generated") @db.Text
+  executionResult  String?     @map("execution_result") @db.Text
+  success          Boolean
+  errorMessage     String?     @map("error_message") @db.Text
+  executedAt       DateTime    @default(now()) @map("executed_at")
+
+  @@index([eventId], name: "idx_executions_event")
+  @@index([ruleId], name: "idx_executions_rule")
+  @@map("system_prompt_executions")
+}
