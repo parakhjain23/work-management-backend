@@ -82,11 +82,10 @@ export class EventLogger {
     }
 
     try {
-      const { RagProducer } = await import('../rag/rag.producer.js');
-      const ragProducer = new RagProducer();
-      await ragProducer.handleEvent(event);
+      const { handleRagEvent } = await import('../rag/producer/rag.event.handler.js');
+      await handleRagEvent(event);
     } catch (error) {
-      console.error('[EVENT] Failed to update RAG:', error);
+      console.error('[EVENT] Failed to enqueue RAG job:', error);
     }
   }
 }

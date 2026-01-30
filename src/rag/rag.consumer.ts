@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { RagClient } from './rag.client.js';
+import { RagClient } from './core/rag.client.js';
 import { getPrismaClient } from '../db/prisma.js';
 
 const ragClient = new RagClient();
