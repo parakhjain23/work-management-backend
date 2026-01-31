@@ -1,17 +1,17 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import healthRoutes from '../routes/health.js';
 import aiSchemaRoutes from '../routes/ai.schema.js';
 import aiSqlRoutes from '../routes/ai.sql.js';
-import intentRoutes from '../routes/intent.routes.js';
-import chatbotRoutes from '../routes/chatbot.js';
-import ragRoutes from '../routes/rag.js';
+import intentRoutes from '../routes/intent.routes';
 import categoriesRoutes from '../routes/categories.routes.js';
 import workItemsRoutes from '../routes/workItems.routes.js';
 import customFieldsRoutes from '../routes/customFields.routes.js';
 import workItemLogsRoutes from '../routes/workItemLogs.routes.js';
 import followersRoutes from '../routes/followers.routes.js';
 import { mockAuthMiddleware } from '../middleware/auth.mock.js';
+import chatbotRoutes from '../routes/chatbot.routes.js';
+import healthRoutes from '../routes/health.route.js';
+import ragRoutes from '../routes/rag.route.js';
 
 const app = express();
 
