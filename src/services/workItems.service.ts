@@ -3,8 +3,8 @@ import { WorkItemStatus, WorkItemPriority, LogType } from '@prisma/client';
 import { eventDispatcher, CentralizedEventDispatcher } from '../events/event.dispatcher.centralized.js';
 
 export interface CreateWorkItemDto {
-  categoryId: bigint;
   title: string;
+  categoryId?: bigint;
   description?: string;
   status?: WorkItemStatus;
   priority?: WorkItemPriority;
@@ -12,6 +12,9 @@ export interface CreateWorkItemDto {
   startDate?: Date;
   dueDate?: Date;
   parentId?: bigint;
+  rootParentId?: bigint;
+  externalId?: string;
+  createdBy?: bigint;
 }
 
 export interface UpdateWorkItemDto {
@@ -20,6 +23,14 @@ export interface UpdateWorkItemDto {
   status?: WorkItemStatus;
   priority?: WorkItemPriority;
   categoryId?: bigint;
+  assigneeId?: bigint | null;
+  startDate?: Date | null;
+  dueDate?: Date | null;
+  externalId?: string | null;
+  createdBy?: bigint | null;
+  parentId?: bigint | null;
+  rootParentId?: bigint | null;
+  docId?: string | null;
 }
 
 export interface WorkItemFilters {
@@ -104,12 +115,23 @@ export class WorkItemsService {
    * Purpose: Create a new work item and emit creation event
    */
   async create(orgId: bigint, userId: bigint, data: CreateWorkItemDto) {
-    const category = await this.prisma.category.findFirst({
-      where: { id: data.categoryId, orgId }
-    });
+    let categoryId = data.categoryId;
 
-    if (!category) {
-      throw new Error('Category not found');
+    if (!categoryId) {
+      const defaultCategory = await this.prisma.category.findFirst({
+        where: { orgId, keyName: 'general' }
+      });
+      if (!defaultCategory) {
+        throw new Error('No category provided and default category not found');
+      }
+      categoryId = defaultCategory.id;
+    } else {
+      const category = await this.prisma.category.findFirst({
+        where: { id: categoryId, orgId }
+      });
+      if (!category) {
+        throw new Error('Category not found');
+      }
     }
 
     if (data.parentId) {
@@ -119,15 +141,26 @@ export class WorkItemsService {
           category: { orgId }
         }
       });
-
       if (!parent) {
         throw new Error('Parent work item not found');
       }
     }
 
+    if (data.rootParentId) {
+      const rootParent = await this.prisma.workItem.findFirst({
+        where: {
+          id: data.rootParentId,
+          category: { orgId }
+        }
+      });
+      if (!rootParent) {
+        throw new Error('Root parent work item not found');
+      }
+    }
+
     const workItem = await this.prisma.workItem.create({
       data: {
-        categoryId: data.categoryId,
+        categoryId,
         title: data.title,
         description: data.description,
         status: data.status || WorkItemStatus.CAPTURED,
@@ -136,7 +169,9 @@ export class WorkItemsService {
         startDate: data.startDate,
         dueDate: data.dueDate,
         parentId: data.parentId,
-        createdBy: userId,
+        rootParentId: data.rootParentId,
+        externalId: data.externalId,
+        createdBy: data.createdBy || userId,
         updatedBy: userId
       },
       include: {
@@ -195,6 +230,19 @@ export class WorkItemsService {
       changes.push(`Category changed to ${newCategory.name}`);
     }
 
+    if (data.parentId !== undefined && data.parentId !== null) {
+      const parentWorkItem = await this.prisma.workItem.findFirst({
+        where: {
+          id: data.parentId,
+          category: { orgId }
+        }
+      });
+      if (!parentWorkItem) {
+        throw new Error('Parent work item not found');
+      }
+      changes.push(`Parent changed to work item #${data.parentId}`);
+    }
+
     const updated = await this.prisma.workItem.update({
       where: { id: workItem.id },
       data: {
@@ -219,7 +267,8 @@ export class WorkItemsService {
     }
 
     // Emit event after successful DB mutation
-    const changedFields = Object.keys(data);
+    // Only include fields that were actually provided (not undefined)
+    const changedFields = Object.keys(data).filter(key => data[key as keyof UpdateWorkItemDto] !== undefined);
     await eventDispatcher.emit(
       CentralizedEventDispatcher.workItemEvent(
         'update',

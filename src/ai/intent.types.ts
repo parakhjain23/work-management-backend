@@ -23,13 +23,17 @@ export interface IntentRequest {
 // Payload contracts for each intent
 export interface CreateWorkItemPayload {
   title: string;
-  description?: string;
   category_id?: number;
+  description?: string;
   priority?: WorkItemPriority;
   status?: WorkItemStatus;
   assignee_id?: number;
-  due_date?: string;
   start_date?: string;
+  due_date?: string;
+  parent_id?: number;
+  root_parent_id?: number;
+  external_id?: string;
+  created_by?: number;
 }
 
 export interface UpdateWorkItemPayload {
@@ -40,6 +44,14 @@ export interface UpdateWorkItemPayload {
     status?: WorkItemStatus;
     priority?: WorkItemPriority;
     category_id?: number;
+    assignee_id?: number | null;
+    start_date?: string | null;
+    due_date?: string | null;
+    external_id?: string | null;
+    created_by?: number | null;
+    parent_id?: number | null;
+    root_parent_id?: number | null;
+    doc_id?: string | null;
   };
 }
 

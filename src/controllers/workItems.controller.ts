@@ -93,12 +93,12 @@ export const getWorkItemById = async (req: Request, res: Response): Promise<void
 
 export const createWorkItem = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { categoryId, title, description, status, priority, assigneeId, startDate, dueDate, parentId } = req.body;
+    const { categoryId, title, description, status, priority, assigneeId, startDate, dueDate, parentId, rootParentId, externalId, createdBy } = req.body;
 
-    if (!categoryId || !title) {
+    if (!title) {
       res.status(400).json({
         success: false,
-        error: 'categoryId and title are required'
+        error: 'title is required'
       });
       return;
     }
@@ -107,15 +107,18 @@ export const createWorkItem = async (req: Request, res: Response): Promise<void>
     const userId = BigInt(req.user!.id);
 
     const workItem = await workItemsService.create(orgId, userId, {
-      categoryId: BigInt(categoryId),
       title,
+      categoryId: categoryId ? BigInt(categoryId) : undefined,
       description,
       status,
       priority,
       assigneeId: assigneeId ? BigInt(assigneeId) : undefined,
       startDate: startDate ? new Date(startDate) : undefined,
       dueDate: dueDate ? new Date(dueDate) : undefined,
-      parentId: parentId ? BigInt(parentId) : undefined
+      parentId: parentId ? BigInt(parentId) : undefined,
+      rootParentId: rootParentId ? BigInt(rootParentId) : undefined,
+      externalId,
+      createdBy: createdBy ? BigInt(createdBy) : undefined
     });
 
     res.status(201).json({
@@ -142,9 +145,9 @@ export const updateWorkItem = async (req: Request, res: Response): Promise<void>
       return;
     }
     const workItemId = BigInt(workItemIdParam);
-    const { title, description, status, priority, categoryId } = req.body;
+    const { title, description, status, priority, categoryId, assigneeId, startDate, dueDate, externalId, createdBy, parentId, rootParentId, docId } = req.body;
 
-    if (!title && !description && !status && !priority && !categoryId) {
+    if (!title && !description && !status && !priority && !categoryId && assigneeId === undefined && !startDate && !dueDate && !externalId && createdBy === undefined && parentId === undefined && rootParentId === undefined && !docId) {
       res.status(400).json({
         success: false,
         error: 'At least one field is required'
@@ -160,7 +163,15 @@ export const updateWorkItem = async (req: Request, res: Response): Promise<void>
       description,
       status,
       priority,
-      categoryId: categoryId ? BigInt(categoryId) : undefined
+      categoryId: categoryId ? BigInt(categoryId) : undefined,
+      assigneeId: assigneeId !== undefined ? (assigneeId ? BigInt(assigneeId) : null) : undefined,
+      startDate: startDate !== undefined ? (startDate ? new Date(startDate) : null) : undefined,
+      dueDate: dueDate !== undefined ? (dueDate ? new Date(dueDate) : null) : undefined,
+      externalId: externalId !== undefined ? externalId : undefined,
+      createdBy: createdBy !== undefined ? (createdBy ? BigInt(createdBy) : null) : undefined,
+      parentId: parentId !== undefined ? (parentId ? BigInt(parentId) : null) : undefined,
+      rootParentId: rootParentId !== undefined ? (rootParentId ? BigInt(rootParentId) : null) : undefined,
+      docId: docId !== undefined ? docId : undefined
     });
 
     res.json({

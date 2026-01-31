@@ -99,40 +99,19 @@ export class IntentRouter {
 
   /**
    * Validate threadId scope
+   * threadId must be numeric: workItemId or orgId
    */
   private validateThreadScope(threadId: string, intent: IntentType, payload: any): ValidationResult {
-    // Allow any threadId format - validation is optional
     if (!threadId || threadId.trim() === '') {
       return { valid: false, error: 'threadId is required' };
     }
 
-    // Parse threadId format: "org:1:global" or "workItem:123"
-    const parts = threadId.split(':');
-    
-    // If threadId doesn't follow structured format, allow it (e.g., "thread_123")
-    if (parts.length < 2) {
-      return { valid: true };
-    }
-
-    const scopeType = parts[0];
-    
-    // Global scope - all intents allowed
-    if (scopeType === 'org' && parts[2] === 'global') {
-      return { valid: true };
-    }
-
-    // WorkItem scope - validate work_item_id matches
-    if (scopeType === 'workItem') {
-      const scopeWorkItemId = parseInt(parts[1], 10);
-      
-      // Check if intent operates on correct work item
-      if (payload.work_item_id && payload.work_item_id !== scopeWorkItemId) {
-        return { valid: false, error: 'Scope violation: work_item_id does not match threadId' };
-      }
-      
-      if (payload.parent_id && payload.parent_id !== scopeWorkItemId) {
-        return { valid: false, error: 'Scope violation: parent_id does not match threadId' };
-      }
+    // threadId must be numeric (workItemId or orgId)
+    if (!/^\d+$/.test(threadId)) {
+      return { 
+        valid: false, 
+        error: 'threadId must be numeric (workItemId or orgId)' 
+      };
     }
 
     return { valid: true };
@@ -151,19 +130,20 @@ export class IntentRouter {
       return { success: false, error: 'title is required' };
     }
 
-    // Default category_id to 1 if not provided
-    const categoryId = payload.category_id ? BigInt(payload.category_id) : BigInt(1);
-
     // Execute service
     const workItem = await this.workItemsService.create(orgId, userId, {
-      categoryId,
       title: payload.title,
+      categoryId: payload.category_id ? BigInt(payload.category_id) : undefined,
       description: payload.description,
       status: payload.status,
       priority: payload.priority,
       assigneeId: payload.assignee_id ? BigInt(payload.assignee_id) : undefined,
       startDate: payload.start_date ? new Date(payload.start_date) : undefined,
-      dueDate: payload.due_date ? new Date(payload.due_date) : undefined
+      dueDate: payload.due_date ? new Date(payload.due_date) : undefined,
+      parentId: payload.parent_id ? BigInt(payload.parent_id) : undefined,
+      rootParentId: payload.root_parent_id ? BigInt(payload.root_parent_id) : undefined,
+      externalId: payload.external_id,
+      createdBy: payload.created_by ? BigInt(payload.created_by) : undefined
     });
 
     // Event is emitted by service layer
@@ -202,7 +182,15 @@ export class IntentRouter {
       description: payload.fields.description,
       status: payload.fields.status,
       priority: payload.fields.priority,
-      categoryId: payload.fields.category_id ? BigInt(payload.fields.category_id) : undefined
+      categoryId: payload.fields.category_id ? BigInt(payload.fields.category_id) : undefined,
+      assigneeId: payload.fields.assignee_id !== undefined ? (payload.fields.assignee_id ? BigInt(payload.fields.assignee_id) : null) : undefined,
+      startDate: payload.fields.start_date !== undefined ? (payload.fields.start_date ? new Date(payload.fields.start_date) : null) : undefined,
+      dueDate: payload.fields.due_date !== undefined ? (payload.fields.due_date ? new Date(payload.fields.due_date) : null) : undefined,
+      externalId: payload.fields.external_id !== undefined ? payload.fields.external_id : undefined,
+      createdBy: payload.fields.created_by !== undefined ? (payload.fields.created_by ? BigInt(payload.fields.created_by) : null) : undefined,
+      parentId: payload.fields.parent_id !== undefined ? (payload.fields.parent_id ? BigInt(payload.fields.parent_id) : null) : undefined,
+      rootParentId: payload.fields.root_parent_id !== undefined ? (payload.fields.root_parent_id ? BigInt(payload.fields.root_parent_id) : null) : undefined,
+      docId: payload.fields.doc_id !== undefined ? payload.fields.doc_id : undefined
     });
 
     // Event is emitted by service layer

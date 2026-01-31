@@ -10,6 +10,7 @@ import categoriesRoutes from '../routes/categories.routes.js';
 import workItemsRoutes from '../routes/workItems.routes.js';
 import customFieldsRoutes from '../routes/customFields.routes.js';
 import workItemLogsRoutes from '../routes/workItemLogs.routes.js';
+import followersRoutes from '../routes/followers.routes.js';
 import { mockAuthMiddleware } from '../middleware/auth.mock.js';
 
 const app = express();
@@ -38,6 +39,7 @@ app.use('/', categoriesRoutes);
 app.use('/', workItemsRoutes);
 app.use('/', customFieldsRoutes);
 app.use('/', workItemLogsRoutes);
+app.use('/', followersRoutes);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Error:', err.message);

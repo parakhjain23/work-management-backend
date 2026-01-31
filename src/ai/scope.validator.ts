@@ -14,39 +14,24 @@ export class ScopeValidator {
   public parseThreadId(threadId: string | undefined): ScopeValidationResult {
     if (!threadId) {
       return {
-        valid: true,
-        scope: { type: 'global' }
+        valid: false,
+        error: 'threadId is required'
       };
     }
 
-    const globalPattern = /^org:([^:]+):global$/;
-    const workItemPattern = /^workItem:(\d+)$/;
-
-    const globalMatch = threadId.match(globalPattern);
-    if (globalMatch) {
+    // threadId must be numeric (workItemId or orgId)
+    if (!/^\d+$/.test(threadId)) {
       return {
-        valid: true,
-        scope: {
-          type: 'global',
-          orgId: globalMatch[1]
-        }
+        valid: false,
+        error: 'threadId must be numeric (workItemId or orgId)'
       };
     }
 
-    const workItemMatch = threadId.match(workItemPattern);
-    if (workItemMatch) {
-      return {
-        valid: true,
-        scope: {
-          type: 'work_item',
-          workItemId: workItemMatch[1]
-        }
-      };
-    }
-
+    // Treat all numeric threadIds as global scope
+    // The actual context (workItem vs org) is determined by usage
     return {
-      valid: false,
-      error: 'Invalid threadId format. Expected org:{orgId}:global or workItem:{id}'
+      valid: true,
+      scope: { type: 'global' }
     };
   }
 
