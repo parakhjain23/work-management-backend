@@ -14,6 +14,7 @@ model Organization {
   updatedAt  DateTime    @updatedAt @map("updated_at")
   categories Category[]
   customFieldMetaData CustomFieldMetaData[]
+  systemPrompts SystemPrompt[]
 
   @@map("organizations")
 }
@@ -184,47 +185,31 @@ enum CalculatedBy {
 }
 
 model SystemPrompt {
-  id          BigInt      @id @default(autoincrement())
-  name        String      @db.VarChar(255)
-  description String?     @db.Text
-  promptText  String      @map("prompt_text") @db.Text
-  createdAt   DateTime    @default(now()) @map("created_at")
-  isActive    Boolean     @default(true) @map("is_active")
+  id              BigInt      @id @default(autoincrement())
+  orgId           BigInt      @map("org_id")
   
-  rules       SystemPromptRule[]
+  name            String      @db.VarChar(255)
+  keyName         String      @map("key_name") @db.VarChar(255)
+  description     String?     @db.Text
+  
+  eventType       String      @map("event_type") @db.VarChar(100)
+  conditionCode   String      @map("condition_code") @db.Text
+  promptTemplate  String      @map("prompt_template") @db.Text
+  
+  isActive        Boolean     @default(true) @map("is_active")
+  priority        Int         @default(0)
+  
+  createdBy       BigInt?     @map("created_by")
+  updatedBy       BigInt?     @map("updated_by")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at")
+  
+  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
+  @@unique([orgId, keyName])
+  @@index([orgId], name: "idx_system_prompts_org")
+  @@index([eventType], name: "idx_system_prompts_event_type")
+  @@index([isActive], name: "idx_system_prompts_active")
+  @@index([orgId, eventType, isActive], name: "idx_system_prompts_org_event")
   @@map("system_prompts")
-}
-
-model SystemPromptRule {
-  id               BigInt        @id @default(autoincrement())
-  eventType        String        @map("event_type") @db.VarChar(50)
-  entityType       String        @map("entity_type") @db.VarChar(50)
-  fieldName        String?       @map("field_name") @db.VarChar(100)
-  systemPromptId   BigInt        @map("system_prompt_id")
-  priority         Int           @default(100)
-  isActive         Boolean       @default(true) @map("is_active")
-  createdAt        DateTime      @default(now()) @map("created_at")
-  
-  systemPrompt     SystemPrompt  @relation(fields: [systemPromptId], references: [id])
-
-  @@index([eventType, entityType], name: "idx_prompt_rules_event")
-  @@index([systemPromptId], name: "idx_prompt_rules_prompt")
-  @@map("system_prompt_rules")
-}
-
-model SystemPromptExecution {
-  id               BigInt      @id @default(autoincrement())
-  eventId          BigInt?     @map("event_id")
-  ruleId           BigInt      @map("rule_id")
-  promptId         BigInt      @map("prompt_id")
-  sqlGenerated     String?     @map("sql_generated") @db.Text
-  executionResult  String?     @map("execution_result") @db.Text
-  success          Boolean
-  errorMessage     String?     @map("error_message") @db.Text
-  executedAt       DateTime    @default(now()) @map("executed_at")
-
-  @@index([eventId], name: "idx_executions_event")
-  @@index([ruleId], name: "idx_executions_rule")
-  @@map("system_prompt_executions")
 }
