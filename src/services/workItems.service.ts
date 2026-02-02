@@ -6,7 +6,7 @@ import { FieldChange } from '../types/events.types.js';
 
 export interface CreateWorkItemDto {
   title: string;
-  categoryId?: bigint;
+  categoryId?: bigint | null;
   description?: string;
   status?: WorkItemStatus;
   priority?: WorkItemPriority;
@@ -413,22 +413,22 @@ export class WorkItemsService {
     }
 
     // Query 2: Fetch all custom field metadata for this category (if category exists)
-    const customFieldsMetadata = workItem.categoryId 
+    const customFieldsMetadata = workItem.categoryId
       ? await this.prisma.customFieldMetaData.findMany({
-          where: {
-            categoryId: workItem.categoryId
-          },
-          select: {
-            id: true,
-            keyName: true,
-            name: true,
-            dataType: true,
-            description: true,
-            enums: true,
-            meta: true
-          },
-          orderBy: { name: 'asc' }
-        })
+        where: {
+          categoryId: workItem.categoryId
+        },
+        select: {
+          id: true,
+          keyName: true,
+          name: true,
+          dataType: true,
+          description: true,
+          enums: true,
+          meta: true
+        },
+        orderBy: { name: 'asc' }
+      })
       : [];
 
     // Query 3: Fetch custom field values for this work item
@@ -448,41 +448,39 @@ export class WorkItemsService {
 
     // Map custom field values by keyName
     const customFields: Record<string, any> = {};
-    
+
     for (const cfValue of customFieldValues) {
       const keyName = cfValue.customFieldMetaData.keyName;
-      
+
       // Extract value based on data type
       let value: any = null;
       if (cfValue.valueText !== null) value = cfValue.valueText;
       else if (cfValue.valueNumber !== null) value = Number(cfValue.valueNumber);
       else if (cfValue.valueBoolean !== null) value = cfValue.valueBoolean;
       else if (cfValue.valueJson !== null) value = cfValue.valueJson;
-      
+
       customFields[keyName] = value;
     }
 
     // Return complete data structure
     return {
-      workItem: {
-        id: workItem.id.toString(),
-        title: workItem.title,
-        description: workItem.description,
-        status: workItem.status,
-        priority: workItem.priority || '',
-        categoryId: workItem.categoryId?.toString() || null,
-        assigneeId: workItem.assigneeId?.toString() || null,
-        createdBy: workItem.createdBy?.toString() || '',
-        updatedBy: workItem.updatedBy?.toString() || '',
-        startDate: workItem.startDate?.toISOString() || null,
-        dueDate: workItem.dueDate?.toISOString() || null,
-        parentId: workItem.parentId?.toString() || null,
-        rootParentId: workItem.rootParentId?.toString() || null,
-        externalId: workItem.externalId,
-        docId: workItem.docId,
-        createdAt: workItem.createdAt.toISOString(),
-        updatedAt: workItem.updatedAt.toISOString()
-      },
+      id: workItem.id.toString(),
+      title: workItem.title,
+      description: workItem.description,
+      status: workItem.status,
+      priority: workItem.priority || '',
+      categoryId: workItem.categoryId?.toString() || null,
+      assigneeId: workItem.assigneeId?.toString() || null,
+      createdBy: workItem.createdBy?.toString() || '',
+      updatedBy: workItem.updatedBy?.toString() || '',
+      startDate: workItem.startDate?.toISOString() || null,
+      dueDate: workItem.dueDate?.toISOString() || null,
+      parentId: workItem.parentId?.toString() || null,
+      rootParentId: workItem.rootParentId?.toString() || null,
+      externalId: workItem.externalId,
+      docId: workItem.docId,
+      createdAt: workItem.createdAt.toISOString(),
+      updatedAt: workItem.updatedAt.toISOString(),
       category: workItem.category ? {
         id: workItem.category.id.toString(),
         name: workItem.category.name,
