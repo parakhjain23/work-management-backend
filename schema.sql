@@ -65,7 +65,7 @@ CREATE TABLE categories (
 CREATE TABLE work_items (
     id BIGSERIAL PRIMARY KEY,
     external_id VARCHAR(255),
-    category_id BIGINT NOT NULL,
+    category_id BIGINT,
     title VARCHAR(500) NOT NULL,
     description TEXT,
 

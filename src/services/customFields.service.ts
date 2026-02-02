@@ -245,8 +245,11 @@ export class CustomFieldsService {
     const workItem = await this.prisma.workItem.findFirst({
       where: {
         id: workItemId,
-        category: { orgId }
-      },
+        OR: [
+          { category: { orgId } },
+          { categoryId: null }
+        ]
+      } as any,
       include: {
         category: true
       }
@@ -256,11 +259,13 @@ export class CustomFieldsService {
       throw new Error('Work item not found');
     }
 
-    // Get all custom fields defined for this work item's category
-    const categoryFields = await this.prisma.customFieldMetaData.findMany({
-      where: { categoryId: workItem.categoryId },
-      orderBy: { name: 'asc' }
-    });
+    // Get all custom fields defined for this work item's category (if it has one)
+    const categoryFields = workItem.categoryId
+      ? await this.prisma.customFieldMetaData.findMany({
+          where: { categoryId: workItem.categoryId },
+          orderBy: { name: 'asc' }
+        })
+      : [];
 
     // Get existing values for this work item
     const existingValues = await this.prisma.customFieldValue.findMany({
@@ -326,8 +331,11 @@ export class CustomFieldsService {
     const workItem = await this.prisma.workItem.findFirst({
       where: {
         id: workItemId,
-        category: { orgId }
-      }
+        OR: [
+          { category: { orgId } },
+          { categoryId: null }
+        ]
+      } as any
     });
 
     if (!workItem) {
@@ -412,5 +420,284 @@ export class CustomFieldsService {
     );
 
     return await this.findValuesByWorkItem(workItemId, orgId);
+  }
+
+  /**
+   * Purpose: Get a single custom field value by fieldId and workItemId
+   */
+  async getValueByFieldId(workItemId: bigint, fieldId: bigint, orgId: bigint) {
+    // Verify work item exists and belongs to org
+    const workItem = await this.prisma.workItem.findFirst({
+      where: {
+        id: workItemId,
+        OR: [
+          { category: { orgId } },
+          { categoryId: null }
+        ]
+      } as any
+    });
+
+    if (!workItem) {
+      throw new Error('Work item not found');
+    }
+
+    // Verify field exists and belongs to org
+    const field = await this.prisma.customFieldMetaData.findFirst({
+      where: {
+        id: fieldId,
+        orgId
+      }
+    });
+
+    if (!field) {
+      throw new Error('Custom field not found');
+    }
+
+    // Get the value
+    const value = await this.prisma.customFieldValue.findUnique({
+      where: {
+        workItemId_customFieldMetaDataId: {
+          workItemId,
+          customFieldMetaDataId: fieldId
+        }
+      },
+      include: {
+        customFieldMetaData: true
+      }
+    });
+
+    if (!value) {
+      return {
+        workItemId,
+        customFieldMetaDataId: fieldId,
+        value: null,
+        customFieldMetaData: field
+      };
+    }
+
+    // Extract value based on data type
+    let extractedValue: any = null;
+    if (value.valueText !== null) extractedValue = value.valueText;
+    else if (value.valueNumber !== null) extractedValue = Number(value.valueNumber);
+    else if (value.valueBoolean !== null) extractedValue = value.valueBoolean;
+    else if (value.valueJson !== null) extractedValue = value.valueJson;
+
+    return {
+      id: value.id,
+      workItemId: value.workItemId,
+      customFieldMetaDataId: value.customFieldMetaDataId,
+      value: extractedValue,
+      customFieldMetaData: value.customFieldMetaData
+    };
+  }
+
+  /**
+   * Purpose: Set/update a single custom field value by fieldId and workItemId
+   */
+  async setValueByFieldId(workItemId: bigint, fieldId: bigint, value: any, orgId: bigint) {
+    // Verify work item exists and belongs to org
+    const workItem = await this.prisma.workItem.findFirst({
+      where: {
+        id: workItemId,
+        OR: [
+          { category: { orgId } },
+          { categoryId: null }
+        ]
+      } as any
+    });
+
+    if (!workItem) {
+      throw new Error('Work item not found');
+    }
+
+    // Verify field exists and belongs to org
+    const field = await this.prisma.customFieldMetaData.findFirst({
+      where: {
+        id: fieldId,
+        orgId
+      }
+    });
+
+    if (!field) {
+      throw new Error('Custom field not found');
+    }
+
+    // Get old value for change tracking
+    const oldValueRecord = await this.prisma.customFieldValue.findUnique({
+      where: {
+        workItemId_customFieldMetaDataId: {
+          workItemId,
+          customFieldMetaDataId: fieldId
+        }
+      }
+    });
+
+    let oldValue: any = null;
+    if (oldValueRecord) {
+      if (oldValueRecord.valueText !== null) oldValue = oldValueRecord.valueText;
+      else if (oldValueRecord.valueNumber !== null) oldValue = Number(oldValueRecord.valueNumber);
+      else if (oldValueRecord.valueBoolean !== null) oldValue = oldValueRecord.valueBoolean;
+      else if (oldValueRecord.valueJson !== null) oldValue = oldValueRecord.valueJson;
+    }
+
+    // Prepare value data based on field data type
+    const valueData: any = {
+      workItemId,
+      customFieldMetaDataId: fieldId,
+      valueText: null,
+      valueNumber: null,
+      valueBoolean: null,
+      valueJson: null
+    };
+
+    switch (field.dataType) {
+      case DataType.number:
+        if (typeof value !== 'number') {
+          throw new Error(`Field "${field.name}" expects a number`);
+        }
+        valueData.valueNumber = value;
+        break;
+      case DataType.text:
+        if (typeof value !== 'string') {
+          throw new Error(`Field "${field.name}" expects a string`);
+        }
+        valueData.valueText = value;
+        break;
+      case DataType.boolean:
+        if (typeof value !== 'boolean') {
+          throw new Error(`Field "${field.name}" expects a boolean`);
+        }
+        valueData.valueBoolean = value;
+        break;
+      case DataType.json:
+        valueData.valueJson = value;
+        break;
+    }
+
+    // Upsert the value
+    const updated = await this.prisma.customFieldValue.upsert({
+      where: {
+        workItemId_customFieldMetaDataId: {
+          workItemId,
+          customFieldMetaDataId: fieldId
+        }
+      },
+      create: valueData,
+      update: valueData,
+      include: {
+        customFieldMetaData: true
+      }
+    });
+
+    // Log the change
+    await this.prisma.workItemLog.create({
+      data: {
+        workItemId,
+        logType: LogType.field_update,
+        message: `Custom field "${field.name}" updated from ${oldValue} to ${value}`
+      }
+    });
+
+    // Emit event with change tracking
+    await eventDispatcher.emit(
+      CentralizedEventDispatcher.customFieldValueEvent(
+        'update',
+        workItemId,
+        'user',
+        [field.keyName]
+      )
+    );
+
+    // Extract and return value
+    let extractedValue: any = null;
+    if (updated.valueText !== null) extractedValue = updated.valueText;
+    else if (updated.valueNumber !== null) extractedValue = Number(updated.valueNumber);
+    else if (updated.valueBoolean !== null) extractedValue = updated.valueBoolean;
+    else if (updated.valueJson !== null) extractedValue = updated.valueJson;
+
+    return {
+      id: updated.id,
+      workItemId: updated.workItemId,
+      customFieldMetaDataId: updated.customFieldMetaDataId,
+      value: extractedValue,
+      customFieldMetaData: updated.customFieldMetaData
+    };
+  }
+
+  /**
+   * Purpose: Delete a single custom field value by fieldId and workItemId
+   */
+  async deleteValueByFieldId(workItemId: bigint, fieldId: bigint, orgId: bigint) {
+    // Verify work item exists and belongs to org
+    const workItem = await this.prisma.workItem.findFirst({
+      where: {
+        id: workItemId,
+        OR: [
+          { category: { orgId } },
+          { categoryId: null }
+        ]
+      } as any
+    });
+
+    if (!workItem) {
+      throw new Error('Work item not found');
+    }
+
+    // Verify field exists and belongs to org
+    const field = await this.prisma.customFieldMetaData.findFirst({
+      where: {
+        id: fieldId,
+        orgId
+      }
+    });
+
+    if (!field) {
+      throw new Error('Custom field not found');
+    }
+
+    // Check if value exists
+    const value = await this.prisma.customFieldValue.findUnique({
+      where: {
+        workItemId_customFieldMetaDataId: {
+          workItemId,
+          customFieldMetaDataId: fieldId
+        }
+      }
+    });
+
+    if (!value) {
+      throw new Error('Custom field value not found');
+    }
+
+    // Delete the value
+    await this.prisma.customFieldValue.delete({
+      where: {
+        workItemId_customFieldMetaDataId: {
+          workItemId,
+          customFieldMetaDataId: fieldId
+        }
+      }
+    });
+
+    // Log the deletion
+    await this.prisma.workItemLog.create({
+      data: {
+        workItemId,
+        logType: LogType.field_update,
+        message: `Custom field "${field.name}" value deleted`
+      }
+    });
+
+    // Emit event
+    await eventDispatcher.emit(
+      CentralizedEventDispatcher.customFieldValueEvent(
+        'update',
+        workItemId,
+        'user',
+        [field.keyName]
+      )
+    );
+
+    return { message: 'Custom field value deleted successfully' };
   }
 }

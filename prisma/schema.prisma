@@ -41,7 +41,7 @@ model Category {
 model WorkItem {
   id          BigInt       @id @default(autoincrement())
   externalId  String?      @map("external_id") @db.VarChar(255)
-  categoryId  BigInt       @map("category_id")
+  categoryId  BigInt?      @map("category_id")
   title       String       @db.VarChar(500)
   description String?      @db.Text
   status      WorkItemStatus @default(CAPTURED)
@@ -57,7 +57,7 @@ model WorkItem {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
-  category    Category     @relation(fields: [categoryId], references: [id])
+  category    Category?    @relation(fields: [categoryId], references: [id])
   parent      WorkItem?    @relation("WorkItemHierarchy", fields: [parentId], references: [id])
   children    WorkItem[]   @relation("WorkItemHierarchy")
   rootParent  WorkItem?    @relation("WorkItemRootHierarchy", fields: [rootParentId], references: [id])

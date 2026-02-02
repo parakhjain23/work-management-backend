@@ -7,18 +7,31 @@ import {
   updateWorkItem,
   deleteWorkItem,
   getWorkItemChildren,
-  createWorkItemChild
+  createWorkItemChild,
+  getWorkItemFullData
 } from '../controllers/workItems.controller.js';
+import {
+  getWorkItemCustomFields,
+  updateWorkItemCustomFields,
+  getCustomFieldValue,
+  setCustomFieldValue,
+  deleteCustomFieldValue
+} from '../controllers/customFields.controller.js';
 
 const router = Router();
 
-router.get('/work-items', getWorkItems);
-router.get('/categories/:categoryId/work-items', getWorkItemsByCategory);
-router.get('/work-items/:workItemId', getWorkItemById);
-router.post('/work-items', createWorkItem);
-router.patch('/work-items/:workItemId', updateWorkItem);
-router.delete('/work-items/:workItemId', deleteWorkItem);
-router.get('/work-items/:workItemId/children', getWorkItemChildren);
-router.post('/work-items/:workItemId/children', createWorkItemChild);
+router.get('/', getWorkItems);
+router.get('/:workItemId/full-data', getWorkItemFullData);
+router.get('/:workItemId/children', getWorkItemChildren);
+router.get('/:workItemId/custom-fields', getWorkItemCustomFields);
+router.get('/:workItemId/custom-fields/:fieldId/value', getCustomFieldValue);
+router.get('/:workItemId', getWorkItemById);
+router.post('/', createWorkItem);
+router.post('/:workItemId/children', createWorkItemChild);
+router.patch('/:workItemId', updateWorkItem);
+router.patch('/:workItemId/custom-fields', updateWorkItemCustomFields);
+router.put('/:workItemId/custom-fields/:fieldId/value', setCustomFieldValue);
+router.delete('/:workItemId', deleteWorkItem);
+router.delete('/:workItemId/custom-fields/:fieldId/value', deleteCustomFieldValue);
 
 export default router;
