@@ -201,6 +201,48 @@ INSERT INTO work_items (category_id, title, description, status, priority) VALUE
 (3, 'Add dark mode support', 'Implement dark mode theme for the application', 'THINKING', 'LOW');
 
 -- ===============================
+-- SYSTEM PROMPTS TABLE
+-- ===============================
+CREATE TABLE system_prompts (
+    id BIGSERIAL PRIMARY KEY,
+    org_id BIGINT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    
+    -- Identification
+    name VARCHAR(255) NOT NULL,
+    key_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    
+    -- Event type to match
+    event_type VARCHAR(100) NOT NULL,
+    -- Format: 'work_item.update', 'work_item.create', 'custom_field_value.update'
+    
+    -- AI-generated JS condition code
+    condition_code TEXT NOT NULL,
+    -- Example: "data.changedFields.includes('rating') && data.customFields.rating > 7"
+    
+    -- Prompt template to execute
+    prompt_template TEXT NOT NULL,
+    -- Example: "Alert: {{workItem.title}} has rating {{customFields.rating}}"
+    
+    -- Control flags
+    is_active BOOLEAN DEFAULT true,
+    priority INTEGER DEFAULT 0,
+    
+    -- Audit fields
+    created_by BIGINT,
+    updated_by BIGINT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    
+    UNIQUE (org_id, key_name)
+);
+
+CREATE INDEX idx_system_prompts_org ON system_prompts(org_id);
+CREATE INDEX idx_system_prompts_event_type ON system_prompts(event_type);
+CREATE INDEX idx_system_prompts_active ON system_prompts(is_active);
+CREATE INDEX idx_system_prompts_org_event ON system_prompts(org_id, event_type, is_active);
+
+-- ===============================
 -- SUCCESS VERIFICATION
 -- ===============================
 SELECT 'Database schema created successfully!' AS status;

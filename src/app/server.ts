@@ -8,6 +8,7 @@ import workItemsRoutes from '../routes/workItems.routes.js';
 import customFieldsRoutes from '../routes/customFields.routes.js';
 import workItemLogsRoutes from '../routes/workItemLogs.routes.js';
 import followersRoutes from '../routes/followers.routes.js';
+import systemPromptsRoutes from '../routes/systemPrompts.routes.js';
 import { mockAuthMiddleware } from '../middleware/auth.mock.js';
 import chatbotRoutes from '../routes/chatbot.routes.js';
 import healthRoutes from '../routes/health.route.js';
@@ -40,6 +41,7 @@ app.use('/work-items', workItemsRoutes);
 app.use('/custom-fields', customFieldsRoutes);
 app.use('/work-item-logs', workItemLogsRoutes);
 app.use('/followers', followersRoutes);
+app.use('/system-prompts', systemPromptsRoutes);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Error:', err.message);

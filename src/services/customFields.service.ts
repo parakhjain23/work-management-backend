@@ -1,6 +1,7 @@
 import { getPrismaClient } from '../db/prisma.js';
 import { DataType, LogType } from '@prisma/client';
-import { eventDispatcher, CentralizedEventDispatcher } from '../events/event.dispatcher.centralized.js';
+import { domainEventDispatcher, DomainEventDispatcher } from '../events/domain.event.dispatcher.js';
+import { FieldChange } from '../types/events.types.js';
 
 export interface CreateCustomFieldMetaDto {
   name: string;
@@ -91,8 +92,10 @@ export class CustomFieldsService {
       throw new Error('Category not found');
     }
 
+    const normalizedKeyName = data.keyName.toLowerCase();
+
     const existing = await this.prisma.customFieldMetaData.findFirst({
-      where: { categoryId, keyName: data.keyName }
+      where: { categoryId, keyName: normalizedKeyName }
     });
 
     if (existing) {
@@ -104,7 +107,7 @@ export class CustomFieldsService {
         orgId,
         categoryId,
         name: data.name,
-        keyName: data.keyName,
+        keyName: normalizedKeyName,
         dataType: data.dataType,
         description: data.description,
         enums: data.enums,
@@ -114,16 +117,8 @@ export class CustomFieldsService {
       }
     });
 
-    // Emit event after successful DB mutation
-    await eventDispatcher.emit(
-      CentralizedEventDispatcher.customFieldEvent(
-        'create',
-        field.id,
-        'user',
-        ['name', 'key_name', 'data_type']
-      )
-    );
-
+    // Note: Custom field metadata operations don't emit domain events
+    
     return field;
   }
 
@@ -152,7 +147,7 @@ export class CustomFieldsService {
 
     // Use provided values or copy from source
     const name = data.name || sourceField.name;
-    const keyName = data.keyName || sourceField.keyName;
+    const keyName = (data.keyName || sourceField.keyName).toLowerCase();
     const description = data.description || sourceField.description;
 
     // Check if keyName already exists in this category
@@ -180,21 +175,13 @@ export class CustomFieldsService {
       }
     });
 
-    // Emit event after successful DB mutation
-    await eventDispatcher.emit(
-      CentralizedEventDispatcher.customFieldEvent(
-        'create',
-        field.id,
-        'user',
-        ['name', 'key_name', 'data_type']
-      )
-    );
-
+    // Note: Custom field metadata operations don't emit domain events
+    
     return field;
   }
 
   /**
-   * Purpose: Update custom field metadata and emit update event with changed fields
+   * Purpose: Update custom field metadata with changed fields
    */
   async updateMeta(fieldId: bigint, orgId: bigint, userId: bigint, data: UpdateCustomFieldMetaDto) {
     const field = await this.findMetaById(fieldId, orgId);
@@ -207,17 +194,8 @@ export class CustomFieldsService {
       }
     });
 
-    // Emit event after successful DB mutation
-    const changedFields = Object.keys(data);
-    await eventDispatcher.emit(
-      CentralizedEventDispatcher.customFieldEvent(
-        'update',
-        updated.id,
-        'user',
-        changedFields
-      )
-    );
-
+    // Note: Custom field metadata operations don't emit domain events
+    
     return updated;
   }
 
@@ -231,14 +209,7 @@ export class CustomFieldsService {
       where: { id: field.id }
     });
 
-    // Emit event after successful DB mutation
-    await eventDispatcher.emit(
-      CentralizedEventDispatcher.customFieldEvent(
-        'delete',
-        fieldId,
-        'user'
-      )
-    );
+    // Note: Custom field metadata operations don't emit domain events
   }
 
   async findValuesByWorkItem(workItemId: bigint, orgId: bigint) {
@@ -348,6 +319,13 @@ export class CustomFieldsService {
 
     const fieldMap = new Map(allFields.map(f => [f.keyName, f]));
     const changes: string[] = [];
+    const fieldChanges: Record<string, FieldChange> = {};
+
+    // Get existing values for change tracking
+    const existingValues = await this.prisma.customFieldValue.findMany({
+      where: { workItemId }
+    });
+    const existingValueMap = new Map(existingValues.map(v => [v.customFieldMetaDataId.toString(), v]));
 
     for (const [keyName, value] of Object.entries(data)) {
       const field = fieldMap.get(keyName);
@@ -359,6 +337,26 @@ export class CustomFieldsService {
         workItemId,
         customFieldMetaDataId: field.id
       };
+
+      // Validate enum values if field has enums defined
+      if (field.enums) {
+        const allowedValues = field.enums.split(',').map(v => v.trim());
+        const valueStr = String(value);
+        
+        if (!allowedValues.includes(valueStr)) {
+          throw new Error(`Invalid value for field "${keyName}". Allowed values: ${field.enums}`);
+        }
+      }
+
+      // Get old value for change tracking
+      const existingValue = existingValueMap.get(field.id.toString());
+      let oldValue: any = null;
+      if (existingValue) {
+        if (existingValue.valueText !== null) oldValue = existingValue.valueText;
+        else if (existingValue.valueNumber !== null) oldValue = Number(existingValue.valueNumber);
+        else if (existingValue.valueBoolean !== null) oldValue = existingValue.valueBoolean;
+        else if (existingValue.valueJson !== null) oldValue = existingValue.valueJson;
+      }
 
       switch (field.dataType) {
         case DataType.number:
@@ -396,6 +394,13 @@ export class CustomFieldsService {
       });
 
       changes.push(`${field.name} updated to ${value}`);
+      
+      // Track field change
+      fieldChanges[keyName] = {
+        oldValue,
+        newValue: value,
+        fieldType: 'custom_field'
+      };
     }
 
     if (changes.length > 0) {
@@ -408,14 +413,18 @@ export class CustomFieldsService {
       });
     }
 
-    // Emit ONE event after all DB mutations complete
+    // Emit domain event after all DB mutations complete
     const changedFields = Object.keys(data);
-    await eventDispatcher.emit(
-      CentralizedEventDispatcher.customFieldValueEvent(
+    await domainEventDispatcher.emit(
+      DomainEventDispatcher.customFieldValueEvent(
         'update',
+        workItemId, // Use workItemId as entity_id for custom field values
         workItemId,
+        orgId,
+        workItem.categoryId,
         'user',
-        changedFields
+        changedFields,
+        fieldChanges
       )
     );
 
@@ -540,6 +549,16 @@ export class CustomFieldsService {
       else if (oldValueRecord.valueJson !== null) oldValue = oldValueRecord.valueJson;
     }
 
+    // Validate enum values if field has enums defined
+    if (field.enums) {
+      const allowedValues = field.enums.split(',').map(v => v.trim());
+      const valueStr = String(value);
+      
+      if (!allowedValues.includes(valueStr)) {
+        throw new Error(`Invalid value for field "${field.name}". Allowed values: ${field.enums}`);
+      }
+    }
+
     // Prepare value data based on field data type
     const valueData: any = {
       workItemId,
@@ -598,13 +617,25 @@ export class CustomFieldsService {
       }
     });
 
-    // Emit event with change tracking
-    await eventDispatcher.emit(
-      CentralizedEventDispatcher.customFieldValueEvent(
+    // Emit domain event with change tracking
+    const fieldChanges: Record<string, FieldChange> = {
+      [field.keyName]: {
+        oldValue,
+        newValue: value,
+        fieldType: 'custom_field'
+      }
+    };
+
+    await domainEventDispatcher.emit(
+      DomainEventDispatcher.customFieldValueEvent(
         'update',
+        updated.id,
         workItemId,
+        orgId,
+        workItem.categoryId,
         'user',
-        [field.keyName]
+        [field.keyName],
+        fieldChanges
       )
     );
 
@@ -669,6 +700,13 @@ export class CustomFieldsService {
       throw new Error('Custom field value not found');
     }
 
+    // Extract old value before deletion
+    let extractedOldValue: any = null;
+    if (value.valueText !== null) extractedOldValue = value.valueText;
+    else if (value.valueNumber !== null) extractedOldValue = Number(value.valueNumber);
+    else if (value.valueBoolean !== null) extractedOldValue = value.valueBoolean;
+    else if (value.valueJson !== null) extractedOldValue = value.valueJson;
+
     // Delete the value
     await this.prisma.customFieldValue.delete({
       where: {
@@ -688,13 +726,25 @@ export class CustomFieldsService {
       }
     });
 
-    // Emit event
-    await eventDispatcher.emit(
-      CentralizedEventDispatcher.customFieldValueEvent(
-        'update',
+    // Emit domain event
+    const fieldChanges: Record<string, FieldChange> = {
+      [field.keyName]: {
+        oldValue: extractedOldValue,
+        newValue: null,
+        fieldType: 'custom_field'
+      }
+    };
+
+    await domainEventDispatcher.emit(
+      DomainEventDispatcher.customFieldValueEvent(
+        'delete',
+        value.id,
         workItemId,
+        orgId,
+        workItem.categoryId,
         'user',
-        [field.keyName]
+        [field.keyName],
+        fieldChanges
       )
     );
 

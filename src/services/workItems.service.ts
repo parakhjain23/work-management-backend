@@ -1,7 +1,8 @@
 import { getPrismaClient } from '../db/prisma.js';
 import { WorkItemStatus, WorkItemPriority, LogType } from '@prisma/client';
-import { eventDispatcher, CentralizedEventDispatcher } from '../events/event.dispatcher.centralized.js';
+import { domainEventDispatcher, DomainEventDispatcher } from '../events/domain.event.dispatcher.js';
 import { WorkItemFullData } from '../types/workItem.types.js';
+import { FieldChange } from '../types/events.types.js';
 
 export interface CreateWorkItemDto {
   title: string;
@@ -183,14 +184,24 @@ export class WorkItemsService {
       }
     });
 
-    // Emit event after successful DB mutation
-    await eventDispatcher.emit(
-      CentralizedEventDispatcher.workItemEvent(
+    // Emit domain event after successful DB mutation
+    const fieldChanges: Record<string, FieldChange> = {
+      title: { oldValue: null, newValue: workItem.title, fieldType: 'standard_field' },
+      status: { oldValue: null, newValue: workItem.status, fieldType: 'standard_field' }
+    };
+    if (workItem.description) fieldChanges.description = { oldValue: null, newValue: workItem.description, fieldType: 'standard_field' };
+    if (workItem.priority) fieldChanges.priority = { oldValue: null, newValue: workItem.priority, fieldType: 'standard_field' };
+    if (workItem.categoryId) fieldChanges.categoryId = { oldValue: null, newValue: workItem.categoryId.toString(), fieldType: 'standard_field' };
+
+    await domainEventDispatcher.emit(
+      DomainEventDispatcher.workItemEvent(
         'create',
         workItem.id,
+        orgId,
+        workItem.categoryId,
         'user',
-        ['title', 'description', 'status', 'priority'],
-        data.parentId
+        Object.keys(fieldChanges),
+        fieldChanges
       )
     );
 
@@ -240,12 +251,27 @@ export class WorkItemsService {
       changes.push(`Parent changed to work item #${data.parentId}`);
     }
 
-    // Filter out undefined values to avoid Prisma errors
+    // Filter out undefined values and track field changes
     const updateData: any = { updatedBy: userId };
+    const fieldChanges: Record<string, FieldChange> = {};
+    const changedFields: string[] = [];
+
     Object.keys(data).forEach(key => {
       const value = data[key as keyof UpdateWorkItemDto];
       if (value !== undefined) {
-        updateData[key] = value;
+        const oldValue = (workItem as any)[key];
+        const newValue = value;
+        
+        // Only track if value actually changed
+        if (oldValue !== newValue) {
+          updateData[key] = value;
+          changedFields.push(key);
+          fieldChanges[key] = {
+            oldValue: oldValue instanceof Date ? oldValue.toISOString() : oldValue?.toString() || null,
+            newValue: newValue instanceof Date ? newValue.toISOString() : newValue?.toString() || null,
+            fieldType: 'standard_field'
+          };
+        }
       }
     });
 
@@ -269,15 +295,16 @@ export class WorkItemsService {
       });
     }
 
-    // Emit event after successful DB mutation
-    // Only include fields that were actually provided (not undefined)
-    const changedFields = Object.keys(data).filter(key => data[key as keyof UpdateWorkItemDto] !== undefined);
-    await eventDispatcher.emit(
-      CentralizedEventDispatcher.workItemEvent(
+    // Emit domain event after successful DB mutation
+    await domainEventDispatcher.emit(
+      DomainEventDispatcher.workItemEvent(
         'update',
         updated.id,
+        orgId,
+        updated.categoryId,
         'user',
-        changedFields
+        changedFields,
+        fieldChanges
       )
     );
 
@@ -305,12 +332,21 @@ export class WorkItemsService {
       where: { id: workItem.id }
     });
 
-    // Emit event after successful DB mutation
-    await eventDispatcher.emit(
-      CentralizedEventDispatcher.workItemEvent(
+    // Emit domain event after successful DB mutation
+    const fieldChanges: Record<string, FieldChange> = {
+      title: { oldValue: workItem.title, newValue: null, fieldType: 'standard_field' },
+      status: { oldValue: workItem.status, newValue: null, fieldType: 'standard_field' }
+    };
+
+    await domainEventDispatcher.emit(
+      DomainEventDispatcher.workItemEvent(
         'delete',
         workItemId,
-        'user'
+        orgId,
+        workItem.categoryId,
+        'user',
+        ['title', 'status', 'deleted'],
+        fieldChanges
       )
     );
   }
