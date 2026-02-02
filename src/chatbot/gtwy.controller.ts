@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import { GtwyJwtService } from './gtwy.jwt.js';
 
 const GTWY_ACCESS_KEY = process.env.GTWY_ACCESS_KEY || '';
-const GTWY_CHATBOT_ID = process.env.GTWY_CHATBOT_ID || '';
-const GTWY_ORG_ID = process.env.GTWY_ORG_ID || '58844';
+const GTWY_CHATBOT_ID = '69803b8067da81ed84b2aa69';
+const GTWY_ORG_ID = '59162';
 const JWT_EXPIRY_SECONDS = parseInt(process.env.JWT_EXPIRY_SECONDS || '3600', 10);
 const APP_ENV = process.env.APP_ENV || 'local';
 
