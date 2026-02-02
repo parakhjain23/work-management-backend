@@ -1,6 +1,7 @@
 import { getPrismaClient } from '../db/prisma.js';
 import { WorkItemStatus, WorkItemPriority, LogType } from '@prisma/client';
 import { eventDispatcher, CentralizedEventDispatcher } from '../events/event.dispatcher.centralized.js';
+import { WorkItemFullData } from '../types/workItem.types.js';
 
 export interface CreateWorkItemDto {
   title: string;
@@ -48,7 +49,10 @@ export class WorkItemsService {
     const { categoryId, status, priority, limit = 50, offset = 0 } = filters;
 
     const where: any = {
-      category: { orgId }
+      OR: [
+        { category: { orgId } },
+        { categoryId: null }
+      ]
     };
 
     if (categoryId) where.categoryId = categoryId;
@@ -92,8 +96,11 @@ export class WorkItemsService {
     const workItem = await this.prisma.workItem.findFirst({
       where: {
         id: workItemId,
-        category: { orgId }
-      },
+        OR: [
+          { category: { orgId } },
+          { categoryId: null as any }
+        ]
+      } as any,
       include: {
         category: {
           select: { id: true, name: true, keyName: true }
@@ -115,43 +122,30 @@ export class WorkItemsService {
    * Purpose: Create a new work item and emit creation event
    */
   async create(orgId: bigint, userId: bigint, data: CreateWorkItemDto) {
-    let categoryId = data.categoryId;
-
-    if (!categoryId) {
-      const defaultCategory = await this.prisma.category.findFirst({
-        where: { orgId, keyName: 'general' }
-      });
-      if (!defaultCategory) {
-        throw new Error('No category provided and default category not found');
-      }
-      categoryId = defaultCategory.id;
-    } else {
+    // Validate category if provided
+    if (data.categoryId) {
       const category = await this.prisma.category.findFirst({
-        where: { id: categoryId, orgId }
+        where: { id: data.categoryId, orgId }
       });
       if (!category) {
         throw new Error('Category not found');
       }
     }
 
+    // Validate parent if provided
     if (data.parentId) {
       const parent = await this.prisma.workItem.findFirst({
-        where: {
-          id: data.parentId,
-          category: { orgId }
-        }
+        where: { id: data.parentId }
       });
       if (!parent) {
         throw new Error('Parent work item not found');
       }
     }
 
+    // Validate root parent if provided
     if (data.rootParentId) {
       const rootParent = await this.prisma.workItem.findFirst({
-        where: {
-          id: data.rootParentId,
-          category: { orgId }
-        }
+        where: { id: data.rootParentId }
       });
       if (!rootParent) {
         throw new Error('Root parent work item not found');
@@ -160,7 +154,7 @@ export class WorkItemsService {
 
     const workItem = await this.prisma.workItem.create({
       data: {
-        categoryId,
+        categoryId: data.categoryId ?? undefined,
         title: data.title,
         description: data.description,
         status: data.status || WorkItemStatus.CAPTURED,
@@ -171,9 +165,9 @@ export class WorkItemsService {
         parentId: data.parentId,
         rootParentId: data.rootParentId,
         externalId: data.externalId,
-        createdBy: data.createdBy || userId,
+        createdBy: userId,
         updatedBy: userId
-      },
+      } as any,
       include: {
         category: {
           select: { id: true, name: true, keyName: true }
@@ -234,8 +228,11 @@ export class WorkItemsService {
       const parentWorkItem = await this.prisma.workItem.findFirst({
         where: {
           id: data.parentId,
-          category: { orgId }
-        }
+          OR: [
+            { category: { orgId } },
+            { categoryId: null }
+          ]
+        } as any
       });
       if (!parentWorkItem) {
         throw new Error('Parent work item not found');
@@ -243,12 +240,18 @@ export class WorkItemsService {
       changes.push(`Parent changed to work item #${data.parentId}`);
     }
 
+    // Filter out undefined values to avoid Prisma errors
+    const updateData: any = { updatedBy: userId };
+    Object.keys(data).forEach(key => {
+      const value = data[key as keyof UpdateWorkItemDto];
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
+    });
+
     const updated = await this.prisma.workItem.update({
       where: { id: workItem.id },
-      data: {
-        ...data,
-        updatedBy: userId
-      },
+      data: updateData,
       include: {
         category: {
           select: { id: true, name: true, keyName: true }
@@ -341,5 +344,125 @@ export class WorkItemsService {
 
     // create() method will emit the event with parent_id
     return await this.create(orgId, userId, childData);
+  }
+
+  /**
+   * Purpose: Fetch complete work item data including category and custom fields
+   * Returns the same structure that workers use for condition evaluation
+   */
+  async getFullData(workItemId: bigint, orgId: bigint): Promise<WorkItemFullData> {
+    // Query 1: Fetch work item with category
+    const workItem = await this.prisma.workItem.findFirst({
+      where: {
+        id: workItemId,
+        OR: [
+          { category: { orgId } },
+          { categoryId: null }
+        ]
+      } as any,
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            keyName: true,
+            externalTool: true
+          }
+        }
+      }
+    });
+
+    if (!workItem) {
+      throw new Error('Work item not found');
+    }
+
+    // Query 2: Fetch all custom field metadata for this category (if category exists)
+    const customFieldsMetadata = workItem.categoryId 
+      ? await this.prisma.customFieldMetaData.findMany({
+          where: {
+            categoryId: workItem.categoryId
+          },
+          select: {
+            id: true,
+            keyName: true,
+            name: true,
+            dataType: true,
+            description: true,
+            enums: true,
+            meta: true
+          },
+          orderBy: { name: 'asc' }
+        })
+      : [];
+
+    // Query 3: Fetch custom field values for this work item
+    const customFieldValues = await this.prisma.customFieldValue.findMany({
+      where: {
+        workItemId: workItemId
+      },
+      include: {
+        customFieldMetaData: {
+          select: {
+            keyName: true,
+            dataType: true
+          }
+        }
+      }
+    });
+
+    // Map custom field values by keyName
+    const customFields: Record<string, any> = {};
+    
+    for (const cfValue of customFieldValues) {
+      const keyName = cfValue.customFieldMetaData.keyName;
+      
+      // Extract value based on data type
+      let value: any = null;
+      if (cfValue.valueText !== null) value = cfValue.valueText;
+      else if (cfValue.valueNumber !== null) value = Number(cfValue.valueNumber);
+      else if (cfValue.valueBoolean !== null) value = cfValue.valueBoolean;
+      else if (cfValue.valueJson !== null) value = cfValue.valueJson;
+      
+      customFields[keyName] = value;
+    }
+
+    // Return complete data structure
+    return {
+      workItem: {
+        id: workItem.id.toString(),
+        title: workItem.title,
+        description: workItem.description,
+        status: workItem.status,
+        priority: workItem.priority || '',
+        categoryId: workItem.categoryId?.toString() || null,
+        assigneeId: workItem.assigneeId?.toString() || null,
+        createdBy: workItem.createdBy?.toString() || '',
+        updatedBy: workItem.updatedBy?.toString() || '',
+        startDate: workItem.startDate?.toISOString() || null,
+        dueDate: workItem.dueDate?.toISOString() || null,
+        parentId: workItem.parentId?.toString() || null,
+        rootParentId: workItem.rootParentId?.toString() || null,
+        externalId: workItem.externalId,
+        docId: workItem.docId,
+        createdAt: workItem.createdAt.toISOString(),
+        updatedAt: workItem.updatedAt.toISOString()
+      },
+      category: workItem.category ? {
+        id: workItem.category.id.toString(),
+        name: workItem.category.name,
+        keyName: workItem.category.keyName,
+        externalTool: workItem.category.externalTool
+      } : null,
+      customFieldsMetadata: customFieldsMetadata.map(cf => ({
+        id: cf.id.toString(),
+        keyName: cf.keyName,
+        name: cf.name,
+        dataType: cf.dataType,
+        description: cf.description,
+        enums: cf.enums,
+        meta: cf.meta
+      })),
+      customFields
+    };
   }
 }

@@ -93,7 +93,7 @@ export const getWorkItemById = async (req: Request, res: Response): Promise<void
 
 export const createWorkItem = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { categoryId, title, description, status, priority, assigneeId, startDate, dueDate, parentId, rootParentId, externalId, createdBy } = req.body;
+    const { categoryId, title, description, status, priority, assigneeId, startDate, dueDate, parentId, rootParentId, externalId } = req.body;
 
     if (!title) {
       res.status(400).json({
@@ -117,8 +117,7 @@ export const createWorkItem = async (req: Request, res: Response): Promise<void>
       dueDate: dueDate ? new Date(dueDate) : undefined,
       parentId: parentId ? BigInt(parentId) : undefined,
       rootParentId: rootParentId ? BigInt(rootParentId) : undefined,
-      externalId,
-      createdBy: createdBy ? BigInt(createdBy) : undefined
+      externalId
     });
 
     res.status(201).json({
@@ -281,6 +280,40 @@ export const createWorkItemChild = async (req: Request, res: Response): Promise<
     res.status(status).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create child work item'
+    });
+  }
+};
+
+/**
+ * Purpose: Get complete work item data including category and custom fields
+ * Used for testing, debugging, and AI condition generation reference
+ */
+export const getWorkItemFullData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    console.log('[getWorkItemFullData] Called with params:', req.params);
+    const workItemIdParam = req.params.workItemId;
+    if (Array.isArray(workItemIdParam)) {
+      res.status(400).json({ success: false, error: 'Invalid work item ID' });
+      return;
+    }
+    
+    const workItemId = BigInt(workItemIdParam);
+    const orgId = BigInt(req.user!.org_id);
+    console.log('[getWorkItemFullData] Fetching data for workItemId:', workItemId.toString(), 'orgId:', orgId.toString());
+
+    const fullData = await workItemsService.getFullData(workItemId, orgId);
+    console.log('[getWorkItemFullData] Data fetched successfully');
+
+    res.json({
+      success: true,
+      data: serializeBigInt(fullData)
+    });
+  } catch (error) {
+    console.error('[getWorkItemFullData] Error:', error);
+    const status = error instanceof Error && error.message === 'Work item not found' ? 404 : 500;
+    res.status(status).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch work item full data'
     });
   }
 };

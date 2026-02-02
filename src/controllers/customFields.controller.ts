@@ -308,3 +308,109 @@ export const updateWorkItemCustomFields = async (req: Request, res: Response): P
     });
   }
 };
+
+/**
+ * Purpose: Get a single custom field value by fieldId and workItemId
+ */
+export const getCustomFieldValue = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const workItemIdParam = req.params.workItemId;
+    const fieldIdParam = req.params.fieldId;
+    
+    if (Array.isArray(workItemIdParam) || Array.isArray(fieldIdParam)) {
+      res.status(400).json({ success: false, error: 'Invalid parameters' });
+      return;
+    }
+    
+    const workItemId = BigInt(workItemIdParam);
+    const fieldId = BigInt(fieldIdParam);
+    const orgId = BigInt(req.user!.org_id);
+
+    const value = await customFieldsService.getValueByFieldId(workItemId, fieldId, orgId);
+
+    res.json({
+      success: true,
+      data: serializeBigInt(value)
+    });
+  } catch (error) {
+    const status = error instanceof Error && error.message.includes('not found') ? 404 : 500;
+    res.status(status).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get custom field value'
+    });
+  }
+};
+
+/**
+ * Purpose: Set/update a single custom field value by fieldId and workItemId
+ */
+export const setCustomFieldValue = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const workItemIdParam = req.params.workItemId;
+    const fieldIdParam = req.params.fieldId;
+    const { value } = req.body;
+    
+    if (Array.isArray(workItemIdParam) || Array.isArray(fieldIdParam)) {
+      res.status(400).json({ success: false, error: 'Invalid parameters' });
+      return;
+    }
+
+    if (value === undefined) {
+      res.status(400).json({ success: false, error: 'value is required in request body' });
+      return;
+    }
+    
+    const workItemId = BigInt(workItemIdParam);
+    const fieldId = BigInt(fieldIdParam);
+    const orgId = BigInt(req.user!.org_id);
+
+    const updated = await customFieldsService.setValueByFieldId(workItemId, fieldId, value, orgId);
+
+    res.json({
+      success: true,
+      data: serializeBigInt(updated)
+    });
+  } catch (error) {
+    let status = 500;
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) status = 404;
+      if (error.message.includes('expects')) status = 400;
+    }
+    res.status(status).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to set custom field value'
+    });
+  }
+};
+
+/**
+ * Purpose: Delete a single custom field value by fieldId and workItemId
+ */
+export const deleteCustomFieldValue = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const workItemIdParam = req.params.workItemId;
+    const fieldIdParam = req.params.fieldId;
+    
+    if (Array.isArray(workItemIdParam) || Array.isArray(fieldIdParam)) {
+      res.status(400).json({ success: false, error: 'Invalid parameters' });
+      return;
+    }
+    
+    const workItemId = BigInt(workItemIdParam);
+    const fieldId = BigInt(fieldIdParam);
+    const orgId = BigInt(req.user!.org_id);
+
+    const result = await customFieldsService.deleteValueByFieldId(workItemId, fieldId, orgId);
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    const status = error instanceof Error && error.message.includes('not found') ? 404 : 500;
+    res.status(status).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete custom field value'
+    });
+  }
+};

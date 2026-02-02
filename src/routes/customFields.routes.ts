@@ -8,19 +8,18 @@ import {
   updateCustomField,
   deleteCustomField,
   getWorkItemCustomFields,
-  updateWorkItemCustomFields
+  updateWorkItemCustomFields,
+  getCustomFieldValue,
+  setCustomFieldValue,
+  deleteCustomFieldValue
 } from '../controllers/customFields.controller.js';
 
 const router = Router();
 
-router.get('/custom-fields', getAllCustomFields);
-router.get('/categories/:categoryId/custom-fields', getCustomFieldsByCategory);
-router.get('/custom-fields/:fieldId', getCustomFieldById);
-router.post('/categories/:categoryId/custom-fields', createCustomField);
-router.post('/categories/:categoryId/custom-fields/from-existing', createCustomFieldFromExisting);
-router.patch('/custom-fields/:fieldId', updateCustomField);
-router.delete('/custom-fields/:fieldId', deleteCustomField);
-router.get('/work-items/:workItemId/custom-fields', getWorkItemCustomFields);
-router.patch('/work-items/:workItemId/custom-fields', updateWorkItemCustomFields);
+// Custom field metadata routes (under /api/custom-fields)
+router.get('/', getAllCustomFields);
+router.get('/:fieldId', getCustomFieldById);
+router.patch('/:fieldId', updateCustomField);
+router.delete('/:fieldId', deleteCustomField);
 
 export default router;

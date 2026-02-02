@@ -30,16 +30,16 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 });
 
 app.use('/', healthRoutes);
-app.use('/', aiSchemaRoutes);
-app.use('/', aiSqlRoutes);
+app.use('/ai/schema', aiSchemaRoutes);
+app.use('/ai/sql', aiSqlRoutes);
 app.use('/', intentRoutes);
-app.use('/', chatbotRoutes);
-app.use('/', ragRoutes);
-app.use('/', categoriesRoutes);
-app.use('/', workItemsRoutes);
-app.use('/', customFieldsRoutes);
-app.use('/', workItemLogsRoutes);
-app.use('/', followersRoutes);
+app.use('/chatbot', chatbotRoutes);
+app.use('/rag', ragRoutes);
+app.use('/categories', categoriesRoutes);
+app.use('/work-items', workItemsRoutes);
+app.use('/custom-fields', customFieldsRoutes);
+app.use('/work-item-logs', workItemLogsRoutes);
+app.use('/followers', followersRoutes);
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Error:', err.message);
