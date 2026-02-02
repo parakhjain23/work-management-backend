@@ -42,10 +42,12 @@ export class CategoriesService {
    * Purpose: Create a new category and emit creation event
    */
   async create(orgId: bigint, userId: bigint, data: CreateCategoryDto) {
+    const normalizedKeyName = data.keyName.toLowerCase();
+    
     const existing = await this.prisma.category.findFirst({
       where: {
         orgId,
-        keyName: data.keyName
+        keyName: normalizedKeyName
       }
     });
 
@@ -56,7 +58,7 @@ export class CategoriesService {
     const category = await this.prisma.category.create({
       data: {
         orgId,
-        keyName: data.keyName,
+        keyName: normalizedKeyName,
         name: data.name,
         externalTool: data.externalTool,
         createdBy: userId,

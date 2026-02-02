@@ -2,6 +2,7 @@ import { config } from './config/env.js';
 import app from './app/server.js';
 import { getPrismaClient } from './db/prisma.js';
 import { connectRabbitMQ, closeRabbitMQ } from './queue/rabbitmq.connection.js';
+import { startSystemPromptWorker } from './workers/systemPromptWorker.js';
 
 async function bootstrap() {
   try {
@@ -17,6 +18,9 @@ async function bootstrap() {
     try {
       await connectRabbitMQ();
       console.log('✅ RabbitMQ connected (RAG event publisher)');
+      
+      // Start system prompt worker to consume domain events
+      await startSystemPromptWorker();
     } catch (error) {
       console.warn('⚠️  RabbitMQ connection failed - RAG events will not be queued:', error);
     }

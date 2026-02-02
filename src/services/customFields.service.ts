@@ -92,8 +92,10 @@ export class CustomFieldsService {
       throw new Error('Category not found');
     }
 
+    const normalizedKeyName = data.keyName.toLowerCase();
+
     const existing = await this.prisma.customFieldMetaData.findFirst({
-      where: { categoryId, keyName: data.keyName }
+      where: { categoryId, keyName: normalizedKeyName }
     });
 
     if (existing) {
@@ -105,7 +107,7 @@ export class CustomFieldsService {
         orgId,
         categoryId,
         name: data.name,
-        keyName: data.keyName,
+        keyName: normalizedKeyName,
         dataType: data.dataType,
         description: data.description,
         enums: data.enums,
@@ -145,7 +147,7 @@ export class CustomFieldsService {
 
     // Use provided values or copy from source
     const name = data.name || sourceField.name;
-    const keyName = data.keyName || sourceField.keyName;
+    const keyName = (data.keyName || sourceField.keyName).toLowerCase();
     const description = data.description || sourceField.description;
 
     // Check if keyName already exists in this category
@@ -335,6 +337,16 @@ export class CustomFieldsService {
         workItemId,
         customFieldMetaDataId: field.id
       };
+
+      // Validate enum values if field has enums defined
+      if (field.enums) {
+        const allowedValues = field.enums.split(',').map(v => v.trim());
+        const valueStr = String(value);
+        
+        if (!allowedValues.includes(valueStr)) {
+          throw new Error(`Invalid value for field "${keyName}". Allowed values: ${field.enums}`);
+        }
+      }
 
       // Get old value for change tracking
       const existingValue = existingValueMap.get(field.id.toString());
@@ -535,6 +547,16 @@ export class CustomFieldsService {
       else if (oldValueRecord.valueNumber !== null) oldValue = Number(oldValueRecord.valueNumber);
       else if (oldValueRecord.valueBoolean !== null) oldValue = oldValueRecord.valueBoolean;
       else if (oldValueRecord.valueJson !== null) oldValue = oldValueRecord.valueJson;
+    }
+
+    // Validate enum values if field has enums defined
+    if (field.enums) {
+      const allowedValues = field.enums.split(',').map(v => v.trim());
+      const valueStr = String(value);
+      
+      if (!allowedValues.includes(valueStr)) {
+        throw new Error(`Invalid value for field "${field.name}". Allowed values: ${field.enums}`);
+      }
     }
 
     // Prepare value data based on field data type

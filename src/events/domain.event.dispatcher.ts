@@ -67,7 +67,12 @@ export class DomainEventDispatcher {
     if (!event.entity) throw new Error('Event must have entity field');
     if (!event.action) throw new Error('Event must have action field');
     if (!event.entity_id) throw new Error('Event must have entity_id field');
-    if (!event.work_item_id) throw new Error('Event must have work_item_id field');
+    
+    // work_item_id is optional for category events
+    if (event.entity !== 'category' && !event.work_item_id) {
+      throw new Error('Event must have work_item_id field');
+    }
+    
     if (!event.org_id) throw new Error('Event must have org_id field');
     if (!event.triggered_by) throw new Error('Event must have triggered_by field');
     if (!event.timestamp) throw new Error('Event must have timestamp field');

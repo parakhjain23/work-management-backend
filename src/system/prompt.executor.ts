@@ -27,7 +27,7 @@ export class PromptExecutor {
     sql?: string;
   }): Promise<void> {
     const matches = await this.dispatcher.findMatchingRules(event);
-
+    
     if (matches.length === 0) {
       return;
     }
