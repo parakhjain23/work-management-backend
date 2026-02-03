@@ -13,13 +13,14 @@ import {
   setCustomFieldValue,
   deleteCustomFieldValue
 } from '../controllers/customFields.controller.js';
+import { authMiddleware } from '../middleware/auth.mock.js';
 
 const router = Router();
 
 // Custom field metadata routes (under /api/custom-fields)
-router.get('/', getAllCustomFields);
-router.get('/:fieldId', getCustomFieldById);
-router.patch('/:fieldId', updateCustomField);
-router.delete('/:fieldId', deleteCustomField);
+router.get('/', authMiddleware, getAllCustomFields);
+router.get('/:fieldId', authMiddleware, getCustomFieldById);
+router.patch('/:fieldId', authMiddleware, updateCustomField);
+router.delete('/:fieldId', authMiddleware, deleteCustomField);
 
 export default router;

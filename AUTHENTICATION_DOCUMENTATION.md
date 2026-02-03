@@ -194,7 +194,7 @@ backend/
 ┌──────────────────────────────────────────────────────────────┐
 │ Step 5: Mock Auth Middleware (THE KEY STEP)                 │
 │ ────────────────────────────────────────────────────────────│
-│ mockAuthMiddleware(req, res, next) {                         │
+│ authMiddleware(req, res, next) {                         │
 │   req.user = {                                               │
 │     id: 1,        // Hardcoded user ID                      │
 │     org_id: 1     // Hardcoded organization ID              │
@@ -278,7 +278,7 @@ import { Request, Response, NextFunction } from 'express';
  * Purpose: Mock authentication middleware for development/testing
  * Provides fake user context with numeric IDs (required for BigInt conversion)
  */
-export const mockAuthMiddleware = (
+export const authMiddleware = (
   req: Request, 
   _res: Response, 
   next: NextFunction
@@ -333,7 +333,7 @@ declare global {
 ```typescript
 import express from 'express';
 import cors from 'cors';
-import { mockAuthMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.mock.js';
 
 const app = express();
 
@@ -347,7 +347,7 @@ app.use(cors({
 app.use(express.json());
 
 // 3. GLOBAL mock authentication (applies to ALL routes)
-app.use(mockAuthMiddleware);
+app.use(authMiddleware);
 
 // 4. Request logger
 app.use((req, _res, next) => {
@@ -705,7 +705,7 @@ export const login = async (req: Request, res: Response) => {
 import { jwtAuthMiddleware } from '../middleware/auth.jwt.js';
 
 // Replace this:
-// app.use(mockAuthMiddleware);
+// app.use(authMiddleware);
 
 // With this:
 app.use(jwtAuthMiddleware);
@@ -715,13 +715,13 @@ app.use(jwtAuthMiddleware);
 
 ```typescript
 // src/app/server.ts
-import { mockAuthMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.mock.js';
 import { jwtAuthMiddleware } from '../middleware/auth.jwt.js';
 
 // Use mock auth in development, real auth in production
 const authMiddleware = process.env.NODE_ENV === 'production' 
   ? jwtAuthMiddleware 
-  : mockAuthMiddleware;
+  : authMiddleware;
 
 app.use(authMiddleware);
 ```
@@ -741,7 +741,7 @@ import { Request, Response, NextFunction } from 'express';
  * Purpose: Mock authentication middleware for development/testing
  * Provides fake user context with numeric IDs (required for BigInt conversion)
  */
-export const mockAuthMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
+export const authMiddleware = (req: Request, _res: Response, next: NextFunction): void => {
   req.user = {
     id: 1,      // Numeric ID (will be converted to BigInt)
     org_id: 1   // Numeric ID (will be converted to BigInt)
@@ -776,7 +776,7 @@ declare global {
 ```typescript
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { mockAuthMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.mock.js';
 
 // Import all routes
 import categoriesRoutes from '../routes/categories.routes.js';
@@ -794,7 +794,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use(mockAuthMiddleware);  // GLOBAL authentication
+app.use(authMiddleware);  // GLOBAL authentication
 
 app.use((req: Request, _res: Response, next: NextFunction) => {
   const timestamp = new Date().toISOString();

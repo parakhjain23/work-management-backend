@@ -17,21 +17,22 @@ import {
   setCustomFieldValue,
   deleteCustomFieldValue
 } from '../controllers/customFields.controller.js';
+import { authMiddleware } from '../middleware/auth.mock.js';
 
 const router = Router();
 
-router.get('/', getWorkItems);
-router.get('/:workItemId/full-data', getWorkItemFullData);
-router.get('/:workItemId/children', getWorkItemChildren);
-router.get('/:workItemId/custom-fields', getWorkItemCustomFields);
-router.get('/:workItemId/custom-fields/:fieldId/value', getCustomFieldValue);
-router.get('/:workItemId', getWorkItemById);
-router.post('/', createWorkItem);
-router.post('/:workItemId/children', createWorkItemChild);
-router.patch('/:workItemId', updateWorkItem);
-router.patch('/:workItemId/custom-fields', updateWorkItemCustomFields);
-router.put('/:workItemId/custom-fields/:fieldId/value', setCustomFieldValue);
-router.delete('/:workItemId', deleteWorkItem);
-router.delete('/:workItemId/custom-fields/:fieldId/value', deleteCustomFieldValue);
+router.get('/', authMiddleware, getWorkItems);
+router.get('/:workItemId/full-data', authMiddleware, getWorkItemFullData);
+router.get('/:workItemId/children', authMiddleware, getWorkItemChildren);
+router.get('/:workItemId/custom-fields', authMiddleware, getWorkItemCustomFields);
+router.get('/:workItemId/custom-fields/:fieldId/value', authMiddleware, getCustomFieldValue);
+router.get('/:workItemId', authMiddleware, getWorkItemById);
+router.post('/', authMiddleware, createWorkItem);
+router.post('/:workItemId/children', authMiddleware, createWorkItemChild);
+router.patch('/:workItemId', authMiddleware, updateWorkItem);
+router.patch('/:workItemId/custom-fields', authMiddleware, updateWorkItemCustomFields);
+router.put('/:workItemId/custom-fields/:fieldId/value', authMiddleware, setCustomFieldValue);
+router.delete('/:workItemId', authMiddleware, deleteWorkItem);
+router.delete('/:workItemId/custom-fields/:fieldId/value', authMiddleware, deleteCustomFieldValue);
 
 export default router;

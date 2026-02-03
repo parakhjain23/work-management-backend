@@ -4,8 +4,8 @@
 
 import { DomainEvent } from '../types/events.types.js';
 import { getRabbitMQChannel } from '../queue/rabbitmq.connection.js';
+import { DOMAIN_EVENTS_EXCHANGE } from '../queue/queue.types.js';
 
-const DOMAIN_EVENTS_EXCHANGE = 'domain_events';
 const EXCHANGE_TYPE = 'topic';
 
 /**

@@ -7,18 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Organization {
-  id         BigInt      @id @default(autoincrement())
-  name       String      @db.VarChar(255)
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
-  categories Category[]
-  customFieldMetaData CustomFieldMetaData[]
-  systemPrompts SystemPrompt[]
-
-  @@map("organizations")
-}
-
 model Category {
   id           BigInt       @id @default(autoincrement())
   orgId        BigInt       @map("org_id")
@@ -30,7 +18,6 @@ model Category {
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
   
-  organization Organization @relation(fields: [orgId], references: [id])
   workItems    WorkItem[]
   followers    CategoryFollower[]
   customFieldMetaData CustomFieldMetaData[]
@@ -116,7 +103,6 @@ model CustomFieldMetaData {
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
-  organization Organization @relation(fields: [orgId], references: [id])
   category    Category    @relation(fields: [categoryId], references: [id])
   customFieldValues CustomFieldValue[]
 
@@ -192,8 +178,8 @@ model SystemPrompt {
   keyName         String      @map("key_name") @db.VarChar(255)
   description     String?     @db.Text
   
-  eventType       String      @map("event_type") @db.VarChar(100)
-  conditionCode   String      @map("condition_code") @db.Text
+  eventTypes      String[]    @map("event_types")
+  conditionCode   String?     @map("condition_code") @db.Text
   promptTemplate  String      @map("prompt_template") @db.Text
   
   isActive        Boolean     @default(true) @map("is_active")
@@ -203,13 +189,10 @@ model SystemPrompt {
   updatedBy       BigInt?     @map("updated_by")
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at")
-  
-  organization    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@unique([orgId, keyName])
   @@index([orgId], name: "idx_system_prompts_org")
-  @@index([eventType], name: "idx_system_prompts_event_type")
   @@index([isActive], name: "idx_system_prompts_active")
-  @@index([orgId, eventType, isActive], name: "idx_system_prompts_org_event")
+  @@index([orgId, isActive], name: "idx_system_prompts_org_active")
   @@map("system_prompts")
 }

@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { getEmbedToken } from '../chatbot/gtwy.controller.js';
-import { mockAuthMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.mock.js';
 
 const router = Router();
 
-router.get('/embed-token', mockAuthMiddleware, getEmbedToken);
+router.get('/embed-token', authMiddleware, getEmbedToken);
 
 export default router;

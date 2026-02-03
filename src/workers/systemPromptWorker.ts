@@ -8,9 +8,7 @@ import { DomainEvent } from '../types/events.types.js';
 import { SystemPromptMatcher } from '../services/systemPromptMatcher.service.js';
 import { ConditionEvaluator } from '../services/conditionEvaluator.service.js';
 import { WorkItemsService } from '../services/workItems.service.js';
-
-const DOMAIN_EVENTS_EXCHANGE = 'domain_events';
-const SYSTEM_PROMPT_QUEUE = 'system_prompt_queue';
+import { DOMAIN_EVENTS_EXCHANGE, SYSTEMPROMPT_QUEUE_NAME } from '../queue/queue.types.js';
 
 export class SystemPromptWorker {
   private matcher = new SystemPromptMatcher();
@@ -29,15 +27,10 @@ export class SystemPromptWorker {
         return;
       }
 
-      await channel.assertQueue(SYSTEM_PROMPT_QUEUE, { durable: true });
-
-      await channel.bindQueue(SYSTEM_PROMPT_QUEUE, DOMAIN_EVENTS_EXCHANGE, 'work_item.*');
-      await channel.bindQueue(SYSTEM_PROMPT_QUEUE, DOMAIN_EVENTS_EXCHANGE, 'custom_field_value.*');
-      await channel.bindQueue(SYSTEM_PROMPT_QUEUE, DOMAIN_EVENTS_EXCHANGE, 'category.*');
-
+      // Queue already created and bound in rabbitmq.connection.ts
       console.log('[System Prompt Worker] ✅ Started - Listening for domain events');
 
-      channel.consume(SYSTEM_PROMPT_QUEUE, async (msg) => {
+      channel.consume(SYSTEMPROMPT_QUEUE_NAME, async (msg) => {
         if (!msg) return;
 
         try {

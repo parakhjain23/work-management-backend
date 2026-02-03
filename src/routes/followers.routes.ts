@@ -7,14 +7,15 @@ import {
   unfollowCategory,
   getCategoryFollowerCount
 } from '../controllers/followers.controller.js';
+import { authMiddleware } from '../middleware/auth.mock.js';
 
 const router = Router();
 
-router.get('/categories/:categoryId/followers', getCategoryFollowers);
-router.get('/categories/:categoryId/followers/count', getCategoryFollowerCount);
-router.get('/categories/:categoryId/followers/status', checkFollowingStatus);
-router.post('/categories/:categoryId/followers', followCategory);
-router.delete('/categories/:categoryId/followers', unfollowCategory);
-router.get('/my-followed-categories', getMyFollowedCategories);
+router.get('/categories/:categoryId/followers', authMiddleware, getCategoryFollowers);
+router.get('/categories/:categoryId/followers/count', authMiddleware, getCategoryFollowerCount);
+router.get('/categories/:categoryId/followers/status', authMiddleware, checkFollowingStatus);
+router.post('/categories/:categoryId/followers', authMiddleware, followCategory);
+router.delete('/categories/:categoryId/followers', authMiddleware, unfollowCategory);
+router.get('/my-followed-categories', authMiddleware, getMyFollowedCategories);
 
 export default router;

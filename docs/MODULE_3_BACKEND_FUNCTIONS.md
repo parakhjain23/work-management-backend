@@ -47,7 +47,7 @@
 
 ## File: `src/middleware/auth.mock.ts`
 
-### `mockAuthMiddleware(request, response, next)`
+### `authMiddleware(request, response, next)`
 → Attach mock user (id: 1, org_id: 1) to request for development
 
 ---
@@ -67,7 +67,7 @@
 ### `app.use(express.json())`
 → Parse JSON request bodies
 
-### `app.use(mockAuthMiddleware)`
+### `app.use(authMiddleware)`
 → Attach mock user to all requests
 
 ### `app.use(routes)`

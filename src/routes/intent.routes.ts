@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { executeIntent } from '../controllers/intent.controller.js';
+import { authMiddleware } from '../middleware/auth.mock.js';
 
 const router = Router();
 
 // AI Intent API - Single entrypoint for all AI mutations
-router.post('/ai/intent', executeIntent);
+router.post('/ai/intent', authMiddleware, executeIntent);
 
 export default router;
