@@ -118,7 +118,7 @@ export class CustomFieldsService {
     });
 
     // Note: Custom field metadata operations don't emit domain events
-    
+
     return field;
   }
 
@@ -176,7 +176,7 @@ export class CustomFieldsService {
     });
 
     // Note: Custom field metadata operations don't emit domain events
-    
+
     return field;
   }
 
@@ -195,7 +195,7 @@ export class CustomFieldsService {
     });
 
     // Note: Custom field metadata operations don't emit domain events
-    
+
     return updated;
   }
 
@@ -233,9 +233,9 @@ export class CustomFieldsService {
     // Get all custom fields defined for this work item's category (if it has one)
     const categoryFields = workItem.categoryId
       ? await this.prisma.customFieldMetaData.findMany({
-          where: { categoryId: workItem.categoryId },
-          orderBy: { name: 'asc' }
-        })
+        where: { categoryId: workItem.categoryId },
+        orderBy: { name: 'asc' }
+      })
       : [];
 
     // Get existing values for this work item
@@ -255,7 +255,7 @@ export class CustomFieldsService {
     // Build result array with all category fields
     const result = categoryFields.map(field => {
       const existingValue = valueMap.get(field.id.toString());
-      
+
       let value = null;
       if (existingValue) {
         switch (field.dataType) {
@@ -352,7 +352,7 @@ export class CustomFieldsService {
       if (field.enums) {
         const allowedValues = field.enums.split(',').map(v => v.trim());
         const valueStr = String(value);
-        
+
         if (!allowedValues.includes(valueStr)) {
           throw new Error(`Invalid value for field "${keyName}". Allowed values: ${field.enums}`);
         }
@@ -404,7 +404,7 @@ export class CustomFieldsService {
       });
 
       changes.push(`${field.name} updated to ${value}`);
-      
+
       // Track field change
       fieldChanges[keyName] = {
         oldValue,
@@ -563,7 +563,7 @@ export class CustomFieldsService {
     if (field.enums) {
       const allowedValues = field.enums.split(',').map(v => v.trim());
       const valueStr = String(value);
-      
+
       if (!allowedValues.includes(valueStr)) {
         throw new Error(`Invalid value for field "${field.name}". Allowed values: ${field.enums}`);
       }

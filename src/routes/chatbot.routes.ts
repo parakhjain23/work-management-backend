@@ -4,6 +4,6 @@ import { mockAuthMiddleware } from '../middleware/auth.mock.js';
 
 const router = Router();
 
-router.get('/chatbot/embed-token', mockAuthMiddleware, getEmbedToken);
+router.get('/embed-token', mockAuthMiddleware, getEmbedToken);
 
 export default router;

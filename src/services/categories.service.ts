@@ -19,6 +19,9 @@ export class CategoriesService {
   async findAll(orgId: bigint) {
     return await this.prisma.category.findMany({
       where: { orgId },
+      include: {
+        customFieldMetaData: true
+      },
       orderBy: { name: 'asc' }
     });
   }
@@ -28,6 +31,9 @@ export class CategoriesService {
       where: {
         id: categoryId,
         orgId
+      },
+      include: {
+        customFieldMetaData: true
       }
     });
 
