@@ -314,13 +314,13 @@ export class CustomFieldsService {
     }
 
     // Fetch custom fields only for this work item's category
-    const allFields = workItem.categoryId
+    const allFields = workItem.categoryId 
       ? await this.prisma.customFieldMetaData.findMany({
-        where: {
-          categoryId: workItem.categoryId,
-          orgId
-        }
-      })
+          where: { 
+            categoryId: workItem.categoryId,
+            orgId 
+          }
+        })
       : [];
 
     if (allFields.length === 0 && Object.keys(data).length > 0) {
