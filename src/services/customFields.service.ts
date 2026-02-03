@@ -313,9 +313,19 @@ export class CustomFieldsService {
       throw new Error('Work item not found');
     }
 
-    const allFields = await this.prisma.customFieldMetaData.findMany({
-      where: { orgId }
-    });
+    // Fetch custom fields only for this work item's category
+    const allFields = workItem.categoryId 
+      ? await this.prisma.customFieldMetaData.findMany({
+          where: { 
+            categoryId: workItem.categoryId,
+            orgId 
+          }
+        })
+      : [];
+
+    if (allFields.length === 0 && Object.keys(data).length > 0) {
+      throw new Error('Work item has no category or category has no custom fields');
+    }
 
     const fieldMap = new Map(allFields.map(f => [f.keyName, f]));
     const changes: string[] = [];
