@@ -9,17 +9,8 @@ const APP_ENV = process.env.APP_ENV || 'local';
 
 let jwtService: GtwyJwtService | null = null;
 
-console.log('🔑 GTWY Configuration:');
-console.log('  - ACCESS_KEY present:', !!GTWY_ACCESS_KEY);
-console.log('  - ACCESS_KEY length:', GTWY_ACCESS_KEY.length);
-console.log('  - CHATBOT_ID:', GTWY_CHATBOT_ID);
-console.log('  - GTWY_ORG_ID:', GTWY_ORG_ID);
-console.log('  - JWT_EXPIRY_SECONDS:', JWT_EXPIRY_SECONDS);
-console.log('  - APP_ENV:', APP_ENV);
-
 try {
   jwtService = new GtwyJwtService(GTWY_ACCESS_KEY);
-  console.log('✅ GTWY JWT Service initialized successfully');
 } catch (error) {
   console.error('❌ Failed to initialize GTWY JWT Service:', error);
 }
@@ -59,14 +50,6 @@ export const getEmbedToken = (req: Request, res: Response): void => {
       expirySeconds: JWT_EXPIRY_SECONDS,
       env: APP_ENV,
       internalOrgId: req.user.org_id.toString()
-    });
-
-    console.log('🎫 Generated embed token for:', {
-      userId: req.user.id,
-      gtwOrgId: GTWY_ORG_ID,
-      internalOrgId: req.user.org_id,
-      chatbotId: GTWY_CHATBOT_ID,
-      tokenLength: embedToken.length
     });
 
     res.json({
