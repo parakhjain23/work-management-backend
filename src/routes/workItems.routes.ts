@@ -17,21 +17,22 @@ import {
   setCustomFieldValue,
   deleteCustomFieldValue
 } from '../controllers/customFields.controller.js';
+import { mockAuthMiddleware } from '../middleware/auth.mock.js';
 
 const router = Router();
 
-router.get('/', getWorkItems);
-router.get('/:workItemId/full-data', getWorkItemFullData);
-router.get('/:workItemId/children', getWorkItemChildren);
-router.get('/:workItemId/custom-fields', getWorkItemCustomFields);
-router.get('/:workItemId/custom-fields/:fieldId/value', getCustomFieldValue);
-router.get('/:workItemId', getWorkItemById);
-router.post('/', createWorkItem);
-router.post('/:workItemId/children', createWorkItemChild);
-router.patch('/:workItemId', updateWorkItem);
-router.patch('/:workItemId/custom-fields', updateWorkItemCustomFields);
-router.put('/:workItemId/custom-fields/:fieldId/value', setCustomFieldValue);
-router.delete('/:workItemId', deleteWorkItem);
-router.delete('/:workItemId/custom-fields/:fieldId/value', deleteCustomFieldValue);
+router.get('/', mockAuthMiddleware, getWorkItems);
+router.get('/:workItemId/full-data', mockAuthMiddleware, getWorkItemFullData);
+router.get('/:workItemId/children', mockAuthMiddleware, getWorkItemChildren);
+router.get('/:workItemId/custom-fields', mockAuthMiddleware, getWorkItemCustomFields);
+router.get('/:workItemId/custom-fields/:fieldId/value', mockAuthMiddleware, getCustomFieldValue);
+router.get('/:workItemId', mockAuthMiddleware, getWorkItemById);
+router.post('/', mockAuthMiddleware, createWorkItem);
+router.post('/:workItemId/children', mockAuthMiddleware, createWorkItemChild);
+router.patch('/:workItemId', mockAuthMiddleware, updateWorkItem);
+router.patch('/:workItemId/custom-fields', mockAuthMiddleware, updateWorkItemCustomFields);
+router.put('/:workItemId/custom-fields/:fieldId/value', mockAuthMiddleware, setCustomFieldValue);
+router.delete('/:workItemId', mockAuthMiddleware, deleteWorkItem);
+router.delete('/:workItemId/custom-fields/:fieldId/value', mockAuthMiddleware, deleteCustomFieldValue);
 
 export default router;
