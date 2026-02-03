@@ -28,6 +28,7 @@ model Category {
 
 model WorkItem {
   id          BigInt       @id @default(autoincrement())
+  orgId       BigInt       @map("org_id")
   externalId  String?      @map("external_id") @db.VarChar(255)
   categoryId  BigInt?      @map("category_id")
   title       String       @db.VarChar(500)
@@ -53,6 +54,7 @@ model WorkItem {
   logs        WorkItemLog[]
   customFieldValues CustomFieldValue[]
 
+  @@index([orgId], name: "idx_work_items_org")
   @@index([categoryId], name: "idx_work_items_category")
   @@index([status], name: "idx_work_items_status")
   @@index([assigneeId], name: "idx_work_items_assignee")

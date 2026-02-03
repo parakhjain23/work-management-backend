@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ragSearch } from '../rag/rag.consumer.js';
-import { authMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.proxy.js';
 
 const router = Router();
 

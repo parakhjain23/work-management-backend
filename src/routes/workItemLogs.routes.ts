@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getWorkItemLogs } from '../controllers/workItemLogs.controller.js';
-import { authMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.proxy.js';
 
 const router = Router();
 

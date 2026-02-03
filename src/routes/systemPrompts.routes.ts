@@ -7,7 +7,7 @@ import {
   deleteSystemPrompt,
   toggleSystemPrompt
 } from '../controllers/systemPrompts.controller.js';
-import { authMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.proxy.js';
 
 const router = Router();
 

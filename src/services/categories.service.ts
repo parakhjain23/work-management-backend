@@ -49,11 +49,13 @@ export class CategoriesService {
    */
   async create(orgId: bigint, userId: bigint, data: CreateCategoryDto) {
     const normalizedKeyName = data.keyName.toLowerCase();
-    
+
     const existing = await this.prisma.category.findFirst({
       where: {
-        orgId,
-        keyName: normalizedKeyName
+        AND: [
+          { orgId },
+          { keyName: normalizedKeyName }
+        ]
       }
     });
 

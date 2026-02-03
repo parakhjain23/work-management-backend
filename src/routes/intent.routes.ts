@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { executeIntent } from '../controllers/intent.controller.js';
-import { authMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.proxy.js';
 
 const router = Router();
 

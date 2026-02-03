@@ -50,10 +50,7 @@ export class WorkItemsService {
     const { categoryId, status, priority, limit = 50, offset = 0 } = filters;
 
     const where: any = {
-      OR: [
-        { category: { orgId } },
-        { categoryId: null }
-      ]
+      orgId
     };
 
     if (categoryId) where.categoryId = categoryId;
@@ -97,10 +94,7 @@ export class WorkItemsService {
     const workItem = await this.prisma.workItem.findFirst({
       where: {
         id: workItemId,
-        OR: [
-          { category: { orgId } },
-          { categoryId: null as any }
-        ]
+        orgId
       } as any,
       include: {
         category: {
@@ -155,6 +149,7 @@ export class WorkItemsService {
 
     const workItem = await this.prisma.workItem.create({
       data: {
+        orgId,
         categoryId: data.categoryId ?? undefined,
         title: data.title,
         description: data.description,
@@ -239,10 +234,7 @@ export class WorkItemsService {
       const parentWorkItem = await this.prisma.workItem.findFirst({
         where: {
           id: data.parentId,
-          OR: [
-            { category: { orgId } },
-            { categoryId: null }
-          ]
+          orgId
         } as any
       });
       if (!parentWorkItem) {
@@ -261,7 +253,7 @@ export class WorkItemsService {
       if (value !== undefined) {
         const oldValue = (workItem as any)[key];
         const newValue = value;
-        
+
         // Only track if value actually changed
         if (oldValue !== newValue) {
           updateData[key] = value;
@@ -391,10 +383,7 @@ export class WorkItemsService {
     const workItem = await this.prisma.workItem.findFirst({
       where: {
         id: workItemId,
-        OR: [
-          { category: { orgId } },
-          { categoryId: null }
-        ]
+        orgId
       } as any,
       include: {
         category: {

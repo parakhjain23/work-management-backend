@@ -7,7 +7,7 @@ import {
   unfollowCategory,
   getCategoryFollowerCount
 } from '../controllers/followers.controller.js';
-import { authMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.proxy.js';
 
 const router = Router();
 

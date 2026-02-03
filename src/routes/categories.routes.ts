@@ -7,12 +7,12 @@ import {
   deleteCategory
 } from '../controllers/categories.controller.js';
 import { getWorkItemsByCategory } from '../controllers/workItems.controller.js';
-import { 
-  getCustomFieldsByCategory, 
-  createCustomField, 
-  createCustomFieldFromExisting 
+import {
+  getCustomFieldsByCategory,
+  createCustomField,
+  createCustomFieldFromExisting
 } from '../controllers/customFields.controller.js';
-import { authMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.proxy.js';
 
 const router = Router();
 

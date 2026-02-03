@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getSchema } from '../ai/schema.controller.js';
-import { authMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.proxy.js';
 
 const router = Router();
 
