@@ -23,7 +23,7 @@ export class PromptExecutor {
   public async executeForEvent(event: {
     entity_type: string;
     action: string;
-    entity_id?: number | bigint;
+    entity_id?: number | number;
     sql?: string;
   }): Promise<void> {
     const matches = await this.dispatcher.findMatchingRules(event);

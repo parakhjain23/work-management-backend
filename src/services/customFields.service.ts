@@ -24,7 +24,7 @@ export interface UpdateCustomFieldValuesDto {
 }
 
 export interface CreateFromExistingDto {
-  sourceFieldId: bigint;
+  sourceFieldId: number;
   name?: string;
   keyName?: string;
   description?: string;
@@ -37,7 +37,7 @@ export class CustomFieldsService {
    * Purpose: Get all custom fields across all categories for an organization
    * Used for browsing and selecting existing custom fields to reuse
    */
-  async findAllMeta(orgId: bigint) {
+  async findAllMeta(orgId: number) {
     return await this.prisma.customFieldMetaData.findMany({
       where: { orgId },
       include: {
@@ -53,7 +53,7 @@ export class CustomFieldsService {
     });
   }
 
-  async findMetaByCategory(categoryId: bigint, orgId: bigint) {
+  async findMetaByCategory(categoryId: number, orgId: number) {
     const category = await this.prisma.category.findFirst({
       where: { id: categoryId, orgId }
     });
@@ -68,7 +68,7 @@ export class CustomFieldsService {
     });
   }
 
-  async findMetaById(fieldId: bigint, orgId: bigint) {
+  async findMetaById(fieldId: number, orgId: number) {
     const field = await this.prisma.customFieldMetaData.findFirst({
       where: { id: fieldId, orgId }
     });
@@ -83,7 +83,7 @@ export class CustomFieldsService {
   /**
    * Purpose: Create custom field metadata and emit creation event
    */
-  async createMeta(categoryId: bigint, orgId: bigint, userId: bigint, data: CreateCustomFieldMetaDto) {
+  async createMeta(categoryId: number, orgId: number, userId: number, data: CreateCustomFieldMetaDto) {
     const category = await this.prisma.category.findFirst({
       where: { id: categoryId, orgId }
     });
@@ -126,7 +126,7 @@ export class CustomFieldsService {
    * Purpose: Create custom field by copying from existing field
    * Allows reusing custom field definitions across categories
    */
-  async createMetaFromExisting(categoryId: bigint, orgId: bigint, userId: bigint, data: CreateFromExistingDto) {
+  async createMetaFromExisting(categoryId: number, orgId: number, userId: number, data: CreateFromExistingDto) {
     // Verify target category exists
     const category = await this.prisma.category.findFirst({
       where: { id: categoryId, orgId }
@@ -183,7 +183,7 @@ export class CustomFieldsService {
   /**
    * Purpose: Update custom field metadata with changed fields
    */
-  async updateMeta(fieldId: bigint, orgId: bigint, userId: bigint, data: UpdateCustomFieldMetaDto) {
+  async updateMeta(fieldId: number, orgId: number, userId: number, data: UpdateCustomFieldMetaDto) {
     const field = await this.findMetaById(fieldId, orgId);
 
     const updated = await this.prisma.customFieldMetaData.update({
@@ -202,7 +202,7 @@ export class CustomFieldsService {
   /**
    * Purpose: Delete custom field metadata and emit deletion event
    */
-  async deleteMeta(fieldId: bigint, orgId: bigint) {
+  async deleteMeta(fieldId: number, orgId: number) {
     const field = await this.findMetaById(fieldId, orgId);
 
     await this.prisma.customFieldMetaData.delete({
@@ -212,7 +212,7 @@ export class CustomFieldsService {
     // Note: Custom field metadata operations don't emit domain events
   }
 
-  async findValuesByWorkItem(workItemId: bigint, orgId: bigint) {
+  async findValuesByWorkItem(workItemId: number, orgId: number) {
     const workItem = await this.prisma.workItem.findFirst({
       where: {
         id: workItemId,
@@ -298,7 +298,7 @@ export class CustomFieldsService {
    * Purpose: Update custom field values (UPSERT) and emit single update event
    * Emits ONE event per API call, not per field
    */
-  async updateValues(workItemId: bigint, orgId: bigint, data: UpdateCustomFieldValuesDto) {
+  async updateValues(workItemId: number, orgId: number, data: UpdateCustomFieldValuesDto) {
     const workItem = await this.prisma.workItem.findFirst({
       where: {
         id: workItemId,
@@ -444,7 +444,7 @@ export class CustomFieldsService {
   /**
    * Purpose: Get a single custom field value by fieldId and workItemId
    */
-  async getValueByFieldId(workItemId: bigint, fieldId: bigint, orgId: bigint) {
+  async getValueByFieldId(workItemId: number, fieldId: number, orgId: number) {
     // Verify work item exists and belongs to org
     const workItem = await this.prisma.workItem.findFirst({
       where: {
@@ -513,7 +513,7 @@ export class CustomFieldsService {
   /**
    * Purpose: Set/update a single custom field value by fieldId and workItemId
    */
-  async setValueByFieldId(workItemId: bigint, fieldId: bigint, value: any, orgId: bigint) {
+  async setValueByFieldId(workItemId: number, fieldId: number, value: any, orgId: number) {
     // Verify work item exists and belongs to org
     const workItem = await this.prisma.workItem.findFirst({
       where: {
@@ -668,7 +668,7 @@ export class CustomFieldsService {
   /**
    * Purpose: Delete a single custom field value by fieldId and workItemId
    */
-  async deleteValueByFieldId(workItemId: bigint, fieldId: bigint, orgId: bigint) {
+  async deleteValueByFieldId(workItemId: number, fieldId: number, orgId: number) {
     // Verify work item exists and belongs to org
     const workItem = await this.prisma.workItem.findFirst({
       where: {

@@ -59,7 +59,7 @@ export class RagProcessor {
   private async processWorkItemCreate(workItemId: number, orgId: number): Promise<void> {
     const collectionId = await this.client.createCollection(orgId.toString());
 
-    const document = await this.builder.buildDocument(BigInt(workItemId));
+    const document = await this.builder.buildDocument(Number(workItemId));
     if (!document) {
       console.warn(`[RAG Processor] Cannot build document for work item ${workItemId}`);
       return;
@@ -76,7 +76,7 @@ export class RagProcessor {
    * Purpose: Update existing work item in RAG
    */
   private async processWorkItemUpdate(workItemId: number, orgId: number): Promise<void> {
-    const document = await this.builder.buildDocument(BigInt(workItemId));
+    const document = await this.builder.buildDocument(Number(workItemId));
     if (!document) {
       console.warn(`[RAG Processor] Cannot build document for work item ${workItemId}`);
       return;

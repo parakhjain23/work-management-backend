@@ -1,13 +1,13 @@
 import { getPrismaClient } from '../db/prisma.js';
 
 export interface WorkItemDocument {
-  workItemId: bigint;
+  workItemId: number;
   title: string;
   content: string;
 }
 
 export class RagDocumentBuilder {
-  public async buildDocument(workItemId: bigint): Promise<WorkItemDocument | null> {
+  public async buildDocument(workItemId: number): Promise<WorkItemDocument | null> {
     const prisma = getPrismaClient();
 
     try {

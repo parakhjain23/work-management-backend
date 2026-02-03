@@ -6,17 +6,17 @@ import { FieldChange } from '../types/events.types.js';
 
 export interface CreateWorkItemDto {
   title: string;
-  categoryId?: bigint | null;
+  categoryId?: number | null;
   description?: string;
   status?: WorkItemStatus;
   priority?: WorkItemPriority;
-  assigneeId?: bigint;
+  assigneeId?: number;
   startDate?: Date;
   dueDate?: Date;
-  parentId?: bigint;
-  rootParentId?: bigint;
+  parentId?: number;
+  rootParentId?: number;
   externalId?: string;
-  createdBy?: bigint;
+  createdBy?: number;
 }
 
 export interface UpdateWorkItemDto {
@@ -24,19 +24,19 @@ export interface UpdateWorkItemDto {
   description?: string;
   status?: WorkItemStatus;
   priority?: WorkItemPriority;
-  categoryId?: bigint;
-  assigneeId?: bigint | null;
+  categoryId?: number;
+  assigneeId?: number | null;
   startDate?: Date | null;
   dueDate?: Date | null;
   externalId?: string | null;
-  createdBy?: bigint | null;
-  parentId?: bigint | null;
-  rootParentId?: bigint | null;
+  createdBy?: number | null;
+  parentId?: number | null;
+  rootParentId?: number | null;
   docId?: string | null;
 }
 
 export interface WorkItemFilters {
-  categoryId?: bigint;
+  categoryId?: number;
   status?: WorkItemStatus;
   priority?: WorkItemPriority;
   limit?: number;
@@ -46,7 +46,7 @@ export interface WorkItemFilters {
 export class WorkItemsService {
   private prisma = getPrismaClient();
 
-  async findAll(orgId: bigint, filters: WorkItemFilters = {}) {
+  async findAll(orgId: number, filters: WorkItemFilters = {}) {
     const { categoryId, status, priority, limit = 50, offset = 0 } = filters;
 
     const where: any = {
@@ -70,7 +70,7 @@ export class WorkItemsService {
     });
   }
 
-  async findByCategory(categoryId: bigint, orgId: bigint) {
+  async findByCategory(categoryId: number, orgId: number) {
     const category = await this.prisma.category.findFirst({
       where: { id: categoryId, orgId }
     });
@@ -90,7 +90,7 @@ export class WorkItemsService {
     });
   }
 
-  async findById(workItemId: bigint, orgId: bigint) {
+  async findById(workItemId: number, orgId: number) {
     const workItem = await this.prisma.workItem.findFirst({
       where: {
         id: workItemId,
@@ -116,7 +116,7 @@ export class WorkItemsService {
   /**
    * Purpose: Create a new work item and emit creation event
    */
-  async create(orgId: bigint, userId: bigint, data: CreateWorkItemDto) {
+  async create(orgId: number, userId: number, data: CreateWorkItemDto) {
     // Validate category if provided
     if (data.categoryId) {
       const category = await this.prisma.category.findFirst({
@@ -206,7 +206,7 @@ export class WorkItemsService {
   /**
    * Purpose: Update work item and emit update event with changed fields
    */
-  async update(workItemId: bigint, orgId: bigint, userId: bigint, data: UpdateWorkItemDto) {
+  async update(workItemId: number, orgId: number, userId: number, data: UpdateWorkItemDto) {
     const workItem = await this.findById(workItemId, orgId);
 
     const changes: string[] = [];
@@ -307,7 +307,7 @@ export class WorkItemsService {
    * Purpose: Delete work item and emit deletion event
    * Deletes related logs and custom field values first (cascade)
    */
-  async delete(workItemId: bigint, orgId: bigint) {
+  async delete(workItemId: number, orgId: number) {
     const workItem = await this.findById(workItemId, orgId);
 
     // Delete related records first (cascade)
@@ -343,7 +343,7 @@ export class WorkItemsService {
     );
   }
 
-  async findChildren(workItemId: bigint, orgId: bigint) {
+  async findChildren(workItemId: number, orgId: number) {
     await this.findById(workItemId, orgId);
 
     return await this.prisma.workItem.findMany({
@@ -361,7 +361,7 @@ export class WorkItemsService {
    * Purpose: Create child work item (inherits category from parent)
    * Event is emitted by create() method
    */
-  async createChild(parentId: bigint, orgId: bigint, userId: bigint, data: Omit<CreateWorkItemDto, 'parentId'>) {
+  async createChild(parentId: number, orgId: number, userId: number, data: Omit<CreateWorkItemDto, 'parentId'>) {
     const parent = await this.findById(parentId, orgId);
 
     const childData: CreateWorkItemDto = {
@@ -378,7 +378,7 @@ export class WorkItemsService {
    * Purpose: Fetch complete work item data including category and custom fields
    * Returns the same structure that workers use for condition evaluation
    */
-  async getFullData(workItemId: bigint, orgId: bigint): Promise<WorkItemFullData> {
+  async getFullData(workItemId: number, orgId: number): Promise<WorkItemFullData> {
     // Query 1: Fetch work item with category
     const workItem = await this.prisma.workItem.findFirst({
       where: {
@@ -453,31 +453,31 @@ export class WorkItemsService {
 
     // Return complete data structure
     return {
-      id: workItem.id.toString(),
+      id: workItem.id,
       title: workItem.title,
       description: workItem.description,
       status: workItem.status,
       priority: workItem.priority || '',
-      categoryId: workItem.categoryId?.toString() || null,
-      assigneeId: workItem.assigneeId?.toString() || null,
-      createdBy: workItem.createdBy?.toString() || '',
-      updatedBy: workItem.updatedBy?.toString() || '',
+      categoryId: workItem.categoryId || null,
+      assigneeId: workItem.assigneeId || null,
+      createdBy: workItem.createdBy || 0,
+      updatedBy: workItem.updatedBy || 0,
       startDate: workItem.startDate?.toISOString() || null,
       dueDate: workItem.dueDate?.toISOString() || null,
-      parentId: workItem.parentId?.toString() || null,
-      rootParentId: workItem.rootParentId?.toString() || null,
+      parentId: workItem.parentId || null,
+      rootParentId: workItem.rootParentId || null,
       externalId: workItem.externalId,
       docId: workItem.docId,
       createdAt: workItem.createdAt.toISOString(),
       updatedAt: workItem.updatedAt.toISOString(),
       category: workItem.category ? {
-        id: workItem.category.id.toString(),
+        id: workItem.category.id,
         name: workItem.category.name,
         keyName: workItem.category.keyName,
         externalTool: workItem.category.externalTool
       } : null,
       customFieldsMetadata: customFieldsMetadata.map(cf => ({
-        id: cf.id.toString(),
+        id: cf.id,
         keyName: cf.keyName,
         name: cf.name,
         dataType: cf.dataType,

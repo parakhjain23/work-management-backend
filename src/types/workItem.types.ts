@@ -1,29 +1,29 @@
 export interface WorkItemFullData {
-  id: string;
+  id: number;
   title: string;
   description: string | null;
   status: string;
   priority: string;
-  categoryId: string | null;
-  assigneeId: string | null;
-  createdBy: string;
-  updatedBy: string;
+  categoryId: number | null;
+  assigneeId: number | null;
+  createdBy: number;
+  updatedBy: number;
   startDate: string | null;
   dueDate: string | null;
-  parentId: string | null;
-  rootParentId: string | null;
+  parentId: number | null;
+  rootParentId: number | null;
   externalId: string | null;
   docId: string | null;
   createdAt: string;
   updatedAt: string;
   category: {
-    id: string;
+    id: number;
     name: string;
     keyName: string;
     externalTool: string | null;
   } | null;
   customFieldsMetadata: Array<{
-    id: string;
+    id: number;
     keyName: string;
     name: string;
     dataType: string;

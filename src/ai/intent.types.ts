@@ -108,7 +108,7 @@ export interface IntentResponse {
   success: boolean;
   result?: {
     type: string;
-    id?: number | bigint;
+    id?: number | number;
     data?: any;
   };
   error?: string;

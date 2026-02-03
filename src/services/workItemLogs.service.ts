@@ -3,7 +3,7 @@ import { getPrismaClient } from '../db/prisma.js';
 export class WorkItemLogsService {
   private prisma = getPrismaClient();
 
-  async findByWorkItem(workItemId: bigint, orgId: bigint) {
+  async findByWorkItem(workItemId: number, orgId: number) {
     const workItem = await this.prisma.workItem.findFirst({
       where: {
         id: workItemId,

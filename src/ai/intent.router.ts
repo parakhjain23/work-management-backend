@@ -34,7 +34,7 @@ export class IntentRouter {
   /**
    * Route intent to appropriate handler
    */
-  public async route(request: IntentRequest, orgId: bigint, userId: bigint): Promise<IntentResponse> {
+  public async route(request: IntentRequest, orgId: number, userId: number): Promise<IntentResponse> {
     try {
       // Validate intent type
       if (!Object.values(IntentType).includes(request.intent)) {
@@ -122,8 +122,8 @@ export class IntentRouter {
    */
   private async handleCreateWorkItem(
     payload: CreateWorkItemPayload,
-    orgId: bigint,
-    userId: bigint
+    orgId: number,
+    userId: number
   ): Promise<IntentResponse> {
     // Validate payload
     if (!payload.title) {
@@ -133,17 +133,17 @@ export class IntentRouter {
     // Execute service
     const workItem = await this.workItemsService.create(orgId, userId, {
       title: payload.title,
-      categoryId: payload.category_id ? BigInt(payload.category_id) : undefined,
+      categoryId: payload.category_id ? Number(payload.category_id) : undefined,
       description: payload.description,
       status: payload.status,
       priority: payload.priority,
-      assigneeId: payload.assignee_id ? BigInt(payload.assignee_id) : undefined,
+      assigneeId: payload.assignee_id ? Number(payload.assignee_id) : undefined,
       startDate: payload.start_date ? new Date(payload.start_date) : undefined,
       dueDate: payload.due_date ? new Date(payload.due_date) : undefined,
-      parentId: payload.parent_id ? BigInt(payload.parent_id) : undefined,
-      rootParentId: payload.root_parent_id ? BigInt(payload.root_parent_id) : undefined,
+      parentId: payload.parent_id ? Number(payload.parent_id) : undefined,
+      rootParentId: payload.root_parent_id ? Number(payload.root_parent_id) : undefined,
       externalId: payload.external_id,
-      createdBy: payload.created_by ? BigInt(payload.created_by) : undefined
+      createdBy: payload.created_by ? Number(payload.created_by) : undefined
     });
 
     // Event is emitted by service layer
@@ -162,8 +162,8 @@ export class IntentRouter {
    */
   private async handleUpdateWorkItem(
     payload: UpdateWorkItemPayload,
-    orgId: bigint,
-    userId: bigint
+    orgId: number,
+    userId: number
   ): Promise<IntentResponse> {
     // Validate payload
     if (!payload.work_item_id) {
@@ -174,7 +174,7 @@ export class IntentRouter {
       return { success: false, error: 'fields object is required' };
     }
 
-    const workItemId = BigInt(payload.work_item_id);
+    const workItemId = Number(payload.work_item_id);
 
     // Execute service
     const workItem = await this.workItemsService.update(workItemId, orgId, userId, {
@@ -182,14 +182,14 @@ export class IntentRouter {
       description: payload.fields.description,
       status: payload.fields.status,
       priority: payload.fields.priority,
-      categoryId: payload.fields.category_id ? BigInt(payload.fields.category_id) : undefined,
-      assigneeId: payload.fields.assignee_id !== undefined ? (payload.fields.assignee_id ? BigInt(payload.fields.assignee_id) : null) : undefined,
+      categoryId: payload.fields.category_id ? Number(payload.fields.category_id) : undefined,
+      assigneeId: payload.fields.assignee_id !== undefined ? (payload.fields.assignee_id ? Number(payload.fields.assignee_id) : null) : undefined,
       startDate: payload.fields.start_date !== undefined ? (payload.fields.start_date ? new Date(payload.fields.start_date) : null) : undefined,
       dueDate: payload.fields.due_date !== undefined ? (payload.fields.due_date ? new Date(payload.fields.due_date) : null) : undefined,
       externalId: payload.fields.external_id !== undefined ? payload.fields.external_id : undefined,
-      createdBy: payload.fields.created_by !== undefined ? (payload.fields.created_by ? BigInt(payload.fields.created_by) : null) : undefined,
-      parentId: payload.fields.parent_id !== undefined ? (payload.fields.parent_id ? BigInt(payload.fields.parent_id) : null) : undefined,
-      rootParentId: payload.fields.root_parent_id !== undefined ? (payload.fields.root_parent_id ? BigInt(payload.fields.root_parent_id) : null) : undefined,
+      createdBy: payload.fields.created_by !== undefined ? (payload.fields.created_by ? Number(payload.fields.created_by) : null) : undefined,
+      parentId: payload.fields.parent_id !== undefined ? (payload.fields.parent_id ? Number(payload.fields.parent_id) : null) : undefined,
+      rootParentId: payload.fields.root_parent_id !== undefined ? (payload.fields.root_parent_id ? Number(payload.fields.root_parent_id) : null) : undefined,
       docId: payload.fields.doc_id !== undefined ? payload.fields.doc_id : undefined
     });
 
@@ -209,14 +209,14 @@ export class IntentRouter {
    */
   private async handleDeleteWorkItem(
     payload: DeleteWorkItemPayload,
-    orgId: bigint,
-    userId: bigint
+    orgId: number,
+    userId: number
   ): Promise<IntentResponse> {
     if (!payload.work_item_id) {
       return { success: false, error: 'work_item_id is required' };
     }
 
-    const workItemId = BigInt(payload.work_item_id);
+    const workItemId = Number(payload.work_item_id);
 
     // Execute service
     await this.workItemsService.delete(workItemId, orgId);
@@ -236,8 +236,8 @@ export class IntentRouter {
    */
   private async handleAddChildWorkItem(
     payload: AddChildWorkItemPayload,
-    orgId: bigint,
-    userId: bigint
+    orgId: number,
+    userId: number
   ): Promise<IntentResponse> {
     if (!payload.parent_id) {
       return { success: false, error: 'parent_id is required' };
@@ -247,11 +247,11 @@ export class IntentRouter {
       return { success: false, error: 'title is required' };
     }
 
-    const parentId = BigInt(payload.parent_id);
+    const parentId = Number(payload.parent_id);
 
     // Execute service
     const workItem = await this.workItemsService.createChild(parentId, orgId, userId, {
-      categoryId: BigInt(0), // Will be inherited from parent
+      categoryId: Number(0), // Will be inherited from parent
       title: payload.title,
       description: payload.description,
       status: payload.status,
@@ -274,8 +274,8 @@ export class IntentRouter {
    */
   private async handleCreateCategory(
     payload: CreateCategoryPayload,
-    orgId: bigint,
-    userId: bigint
+    orgId: number,
+    userId: number
   ): Promise<IntentResponse> {
     if (!payload.key_name || !payload.name) {
       return { success: false, error: 'key_name and name are required' };
@@ -304,8 +304,8 @@ export class IntentRouter {
    */
   private async handleUpdateCategory(
     payload: UpdateCategoryPayload,
-    orgId: bigint,
-    userId: bigint
+    orgId: number,
+    userId: number
   ): Promise<IntentResponse> {
     if (!payload.category_id) {
       return { success: false, error: 'category_id is required' };
@@ -315,7 +315,7 @@ export class IntentRouter {
       return { success: false, error: 'fields object is required' };
     }
 
-    const categoryId = BigInt(payload.category_id);
+    const categoryId = Number(payload.category_id);
 
     // Execute service
     const category = await this.categoriesService.update(categoryId, orgId, userId, {
@@ -339,14 +339,14 @@ export class IntentRouter {
    */
   private async handleCreateCustomField(
     payload: CreateCustomFieldPayload,
-    orgId: bigint,
-    userId: bigint
+    orgId: number,
+    userId: number
   ): Promise<IntentResponse> {
     if (!payload.category_id || !payload.name || !payload.key_name || !payload.data_type) {
       return { success: false, error: 'category_id, name, key_name, and data_type are required' };
     }
 
-    const categoryId = BigInt(payload.category_id);
+    const categoryId = Number(payload.category_id);
 
     // Execute service
     const field = await this.customFieldsService.createMeta(categoryId, orgId, userId, {
@@ -374,8 +374,8 @@ export class IntentRouter {
    */
   private async handleUpdateCustomFieldValue(
     payload: UpdateCustomFieldValuePayload,
-    orgId: bigint,
-    userId: bigint
+    orgId: number,
+    userId: number
   ): Promise<IntentResponse> {
     if (!payload.work_item_id) {
       return { success: false, error: 'work_item_id is required' };
@@ -385,7 +385,7 @@ export class IntentRouter {
       return { success: false, error: 'values object is required' };
     }
 
-    const workItemId = BigInt(payload.work_item_id);
+    const workItemId = Number(payload.work_item_id);
 
     // Execute service
     const values = await this.customFieldsService.updateValues(workItemId, orgId, payload.values);
@@ -406,14 +406,14 @@ export class IntentRouter {
    */
   private async handleUpdateWorkItemStatus(
     payload: UpdateWorkItemStatusPayload,
-    orgId: bigint,
-    userId: bigint
+    orgId: number,
+    userId: number
   ): Promise<IntentResponse> {
     if (!payload.work_item_id || !payload.status) {
       return { success: false, error: 'work_item_id and status are required' };
     }
 
-    const workItemId = BigInt(payload.work_item_id);
+    const workItemId = Number(payload.work_item_id);
 
     // Execute service
     const workItem = await this.workItemsService.update(workItemId, orgId, userId, {

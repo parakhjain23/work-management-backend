@@ -3,7 +3,7 @@ import { getPrismaClient } from '../db/prisma.js';
 export interface MutationEvent {
   entity_type: string;
   action: 'CREATE' | 'UPDATE' | 'DELETE';
-  entity_id?: number | bigint;
+  entity_id?: number | number;
   sql?: string;
   metadata?: any;
 }
@@ -31,7 +31,7 @@ export class EventLogger {
     return 'UPDATE';
   }
 
-  private extractEntityId(sql: string, result: any): number | bigint | undefined {
+  private extractEntityId(sql: string, result: any): number | number | undefined {
     if (result && typeof result === 'object') {
       if ('id' in result) return result.id;
       if (Array.isArray(result) && result.length > 0 && 'id' in result[0]) {

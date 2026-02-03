@@ -13,7 +13,7 @@ const service = new SystemPromptsService();
  */
 export const getSystemPrompts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const orgId = BigInt(req.user!.org_id);
+    const orgId = Number(req.user!.org_id);
     const prompts = await service.findAll(orgId);
 
     res.json({
@@ -30,8 +30,8 @@ export const getSystemPrompts = async (req: Request, res: Response): Promise<voi
  */
 export const getSystemPromptById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const promptId = BigInt(req.params.promptId);
-    const orgId = BigInt(req.user!.org_id);
+    const promptId = Number(req.params.promptId);
+    const orgId = Number(req.user!.org_id);
 
     const prompt = await service.findById(promptId, orgId);
 
@@ -49,8 +49,8 @@ export const getSystemPromptById = async (req: Request, res: Response): Promise<
  */
 export const createSystemPrompt = async (req: Request, res: Response): Promise<void> => {
   try {
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const prompt = await service.create(orgId, userId, req.body);
 
@@ -68,9 +68,9 @@ export const createSystemPrompt = async (req: Request, res: Response): Promise<v
  */
 export const updateSystemPrompt = async (req: Request, res: Response): Promise<void> => {
   try {
-    const promptId = BigInt(req.params.promptId);
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const promptId = Number(req.params.promptId);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const prompt = await service.update(promptId, orgId, userId, req.body);
 
@@ -88,8 +88,8 @@ export const updateSystemPrompt = async (req: Request, res: Response): Promise<v
  */
 export const deleteSystemPrompt = async (req: Request, res: Response): Promise<void> => {
   try {
-    const promptId = BigInt(req.params.promptId);
-    const orgId = BigInt(req.user!.org_id);
+    const promptId = Number(req.params.promptId);
+    const orgId = Number(req.user!.org_id);
 
     await service.delete(promptId, orgId);
 
@@ -104,9 +104,9 @@ export const deleteSystemPrompt = async (req: Request, res: Response): Promise<v
  */
 export const toggleSystemPrompt = async (req: Request, res: Response): Promise<void> => {
   try {
-    const promptId = BigInt(req.params.promptId);
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const promptId = Number(req.params.promptId);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const prompt = await service.toggleActive(promptId, orgId, userId);
 

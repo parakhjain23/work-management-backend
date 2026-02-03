@@ -1,9 +1,9 @@
 export interface ExecutionContext {
-  eventId?: bigint;
-  ruleId: bigint;
-  promptId: bigint;
+  eventId?: number;
+  ruleId: number;
+  promptId: number;
   entityType: string;
-  entityId?: bigint;
+  entityId?: number;
 }
 
 export interface ExecutionGuardResult {
@@ -65,7 +65,7 @@ export class ExecutionGuard {
     this.activeExecutions.delete(executionKey);
   }
 
-  public clearEventHistory(eventId: bigint): void {
+  public clearEventHistory(eventId: number): void {
     const eventKey = eventId.toString();
     this.executionHistory.delete(eventKey);
     

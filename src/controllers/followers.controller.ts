@@ -14,8 +14,8 @@ export const getCategoryFollowers = async (req: Request, res: Response): Promise
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const categoryId = Number(categoryIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const followers = await followersService.getFollowersByCategory(categoryId, orgId);
 
@@ -37,8 +37,8 @@ export const getCategoryFollowers = async (req: Request, res: Response): Promise
  */
 export const getMyFollowedCategories = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = BigInt(req.user!.id);
-    const orgId = BigInt(req.user!.org_id);
+    const userId = Number(req.user!.id);
+    const orgId = Number(req.user!.org_id);
 
     const followedCategories = await followersService.getCategoriesFollowedByUser(userId, orgId);
 
@@ -64,9 +64,9 @@ export const checkFollowingStatus = async (req: Request, res: Response): Promise
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
-    const userId = BigInt(req.user!.id);
-    const orgId = BigInt(req.user!.org_id);
+    const categoryId = Number(categoryIdParam);
+    const userId = Number(req.user!.id);
+    const orgId = Number(req.user!.org_id);
 
     const isFollowing = await followersService.isFollowing(categoryId, userId, orgId);
 
@@ -93,9 +93,9 @@ export const followCategory = async (req: Request, res: Response): Promise<void>
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
-    const userId = BigInt(req.user!.id);
-    const orgId = BigInt(req.user!.org_id);
+    const categoryId = Number(categoryIdParam);
+    const userId = Number(req.user!.id);
+    const orgId = Number(req.user!.org_id);
 
     const follower = await followersService.followCategory(categoryId, userId, orgId);
 
@@ -126,9 +126,9 @@ export const unfollowCategory = async (req: Request, res: Response): Promise<voi
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
-    const userId = BigInt(req.user!.id);
-    const orgId = BigInt(req.user!.org_id);
+    const categoryId = Number(categoryIdParam);
+    const userId = Number(req.user!.id);
+    const orgId = Number(req.user!.org_id);
 
     const result = await followersService.unfollowCategory(categoryId, userId, orgId);
 
@@ -159,8 +159,8 @@ export const getCategoryFollowerCount = async (req: Request, res: Response): Pro
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const categoryId = Number(categoryIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const count = await followersService.getFollowerCount(categoryId, orgId);
 

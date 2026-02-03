@@ -60,8 +60,8 @@ export class SystemPromptWorker {
         return null;
       }
 
-      const workItemId = BigInt(event.work_item_id);
-      const orgId = BigInt(event.org_id);
+      const workItemId = Number(event.work_item_id);
+      const orgId = Number(event.org_id);
 
       const fullData = await this.workItemsService.getFullData(workItemId, orgId);
       return fullData;

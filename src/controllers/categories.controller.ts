@@ -6,7 +6,7 @@ const categoriesService = new CategoriesService();
 
 export const getCategories = async (req: Request, res: Response): Promise<void> => {
   try {
-    const orgId = BigInt(req.user!.org_id);
+    const orgId = Number(req.user!.org_id);
     const categories = await categoriesService.findAll(orgId);
 
     res.json({
@@ -28,8 +28,8 @@ export const getCategoryById = async (req: Request, res: Response): Promise<void
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const categoryId = Number(categoryIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const category = await categoriesService.findById(categoryId, orgId);
 
@@ -58,8 +58,8 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const category = await categoriesService.create(orgId, userId, {
       keyName,
@@ -87,7 +87,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
+    const categoryId = Number(categoryIdParam);
     const { name, externalTool } = req.body;
 
     if (!name && !externalTool) {
@@ -98,8 +98,8 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const category = await categoriesService.update(categoryId, orgId, userId, {
       name,
@@ -126,8 +126,8 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const categoryId = Number(categoryIdParam);
+    const orgId = Number(req.user!.org_id);
 
     await categoriesService.delete(categoryId, orgId);
 

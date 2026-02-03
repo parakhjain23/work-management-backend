@@ -11,7 +11,7 @@ const customFieldsService = new CustomFieldsService();
  */
 export const getAllCustomFields = async (req: Request, res: Response): Promise<void> => {
   try {
-    const orgId = BigInt(req.user!.org_id);
+    const orgId = Number(req.user!.org_id);
 
     const fields = await customFieldsService.findAllMeta(orgId);
 
@@ -34,8 +34,8 @@ export const getCustomFieldsByCategory = async (req: Request, res: Response): Pr
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const categoryId = Number(categoryIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const fields = await customFieldsService.findMetaByCategory(categoryId, orgId);
 
@@ -59,8 +59,8 @@ export const getCustomFieldById = async (req: Request, res: Response): Promise<v
       res.status(400).json({ success: false, error: 'Invalid field ID' });
       return;
     }
-    const fieldId = BigInt(fieldIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const fieldId = Number(fieldIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const field = await customFieldsService.findMetaById(fieldId, orgId);
 
@@ -84,7 +84,7 @@ export const createCustomField = async (req: Request, res: Response): Promise<vo
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
+    const categoryId = Number(categoryIdParam);
     const { name, keyName, dataType, description, enums, meta } = req.body;
 
     if (!name || !keyName || !dataType) {
@@ -103,8 +103,8 @@ export const createCustomField = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const field = await customFieldsService.createMeta(categoryId, orgId, userId, {
       name,
@@ -143,7 +143,7 @@ export const createCustomFieldFromExisting = async (req: Request, res: Response)
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
+    const categoryId = Number(categoryIdParam);
     const { sourceFieldId, name, keyName, description } = req.body;
 
     if (!sourceFieldId) {
@@ -154,11 +154,11 @@ export const createCustomFieldFromExisting = async (req: Request, res: Response)
       return;
     }
 
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const field = await customFieldsService.createMetaFromExisting(categoryId, orgId, userId, {
-      sourceFieldId: BigInt(sourceFieldId),
+      sourceFieldId: Number(sourceFieldId),
       name,
       keyName,
       description
@@ -188,7 +188,7 @@ export const updateCustomField = async (req: Request, res: Response): Promise<vo
       res.status(400).json({ success: false, error: 'Invalid field ID' });
       return;
     }
-    const fieldId = BigInt(fieldIdParam);
+    const fieldId = Number(fieldIdParam);
     const { name, description, enums, meta } = req.body;
 
     if (!name && !description && !enums && !meta) {
@@ -199,8 +199,8 @@ export const updateCustomField = async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const field = await customFieldsService.updateMeta(fieldId, orgId, userId, {
       name,
@@ -229,8 +229,8 @@ export const deleteCustomField = async (req: Request, res: Response): Promise<vo
       res.status(400).json({ success: false, error: 'Invalid field ID' });
       return;
     }
-    const fieldId = BigInt(fieldIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const fieldId = Number(fieldIdParam);
+    const orgId = Number(req.user!.org_id);
 
     await customFieldsService.deleteMeta(fieldId, orgId);
 
@@ -254,8 +254,8 @@ export const getWorkItemCustomFields = async (req: Request, res: Response): Prom
       res.status(400).json({ success: false, error: 'Invalid work item ID' });
       return;
     }
-    const workItemId = BigInt(workItemIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const workItemId = Number(workItemIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const values = await customFieldsService.findValuesByWorkItem(workItemId, orgId);
 
@@ -279,8 +279,8 @@ export const updateWorkItemCustomFields = async (req: Request, res: Response): P
       res.status(400).json({ success: false, error: 'Invalid work item ID' });
       return;
     }
-    const workItemId = BigInt(workItemIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const workItemId = Number(workItemIdParam);
+    const orgId = Number(req.user!.org_id);
 
     if (!req.body || Object.keys(req.body).length === 0) {
       res.status(400).json({
@@ -322,9 +322,9 @@ export const getCustomFieldValue = async (req: Request, res: Response): Promise<
       return;
     }
     
-    const workItemId = BigInt(workItemIdParam);
-    const fieldId = BigInt(fieldIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const workItemId = Number(workItemIdParam);
+    const fieldId = Number(fieldIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const value = await customFieldsService.getValueByFieldId(workItemId, fieldId, orgId);
 
@@ -360,9 +360,9 @@ export const setCustomFieldValue = async (req: Request, res: Response): Promise<
       return;
     }
     
-    const workItemId = BigInt(workItemIdParam);
-    const fieldId = BigInt(fieldIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const workItemId = Number(workItemIdParam);
+    const fieldId = Number(fieldIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const updated = await customFieldsService.setValueByFieldId(workItemId, fieldId, value, orgId);
 
@@ -396,9 +396,9 @@ export const deleteCustomFieldValue = async (req: Request, res: Response): Promi
       return;
     }
     
-    const workItemId = BigInt(workItemIdParam);
-    const fieldId = BigInt(fieldIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const workItemId = Number(workItemIdParam);
+    const fieldId = Number(fieldIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const result = await customFieldsService.deleteValueByFieldId(workItemId, fieldId, orgId);
 
