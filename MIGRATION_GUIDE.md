@@ -14,7 +14,7 @@ This migration removes the `Organization` model from the database schema while m
 
 ### 2. **Authentication Changes**
 - ✅ Added `proxyAuthMiddleware` for production proxy auth
-- ✅ Kept `mockAuthMiddleware` for development
+- ✅ Kept `authMiddleware` for development
 - ✅ Environment-based switch via `AUTH_MODE` env variable
 - ✅ Backward compatible with existing `req.user` contract
 

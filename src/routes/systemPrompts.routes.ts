@@ -7,15 +7,15 @@ import {
   deleteSystemPrompt,
   toggleSystemPrompt
 } from '../controllers/systemPrompts.controller.js';
-import { mockAuthMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.mock.js';
 
 const router = Router();
 
-router.get('/', mockAuthMiddleware, getSystemPrompts);
-router.get('/:promptId', mockAuthMiddleware, getSystemPromptById);
-router.post('/', mockAuthMiddleware, createSystemPrompt);
-router.patch('/:promptId', mockAuthMiddleware, updateSystemPrompt);
-router.patch('/:promptId/toggle', mockAuthMiddleware, toggleSystemPrompt);
-router.delete('/:promptId', mockAuthMiddleware, deleteSystemPrompt);
+router.get('/', authMiddleware, getSystemPrompts);
+router.get('/:promptId', authMiddleware, getSystemPromptById);
+router.post('/', authMiddleware, createSystemPrompt);
+router.patch('/:promptId', authMiddleware, updateSystemPrompt);
+router.patch('/:promptId/toggle', authMiddleware, toggleSystemPrompt);
+router.delete('/:promptId', authMiddleware, deleteSystemPrompt);
 
 export default router;

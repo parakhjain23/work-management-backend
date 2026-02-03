@@ -12,18 +12,18 @@ import {
   createCustomField, 
   createCustomFieldFromExisting 
 } from '../controllers/customFields.controller.js';
-import { mockAuthMiddleware } from '../middleware/auth.mock.js';
+import { authMiddleware } from '../middleware/auth.mock.js';
 
 const router = Router();
 
-router.get('/', mockAuthMiddleware, getCategories);
-router.get('/:categoryId', mockAuthMiddleware, getCategoryById);
-router.get('/:categoryId/work-items', mockAuthMiddleware, getWorkItemsByCategory);
-router.get('/:categoryId/custom-fields', mockAuthMiddleware, getCustomFieldsByCategory);
-router.post('/', mockAuthMiddleware, createCategory);
-router.post('/:categoryId/custom-fields', mockAuthMiddleware, createCustomField);
-router.post('/:categoryId/custom-fields/from-existing', mockAuthMiddleware, createCustomFieldFromExisting);
-router.patch('/:categoryId', mockAuthMiddleware, updateCategory);
-router.delete('/:categoryId', mockAuthMiddleware, deleteCategory);
+router.get('/', authMiddleware, getCategories);
+router.get('/:categoryId', authMiddleware, getCategoryById);
+router.get('/:categoryId/work-items', authMiddleware, getWorkItemsByCategory);
+router.get('/:categoryId/custom-fields', authMiddleware, getCustomFieldsByCategory);
+router.post('/', authMiddleware, createCategory);
+router.post('/:categoryId/custom-fields', authMiddleware, createCustomField);
+router.post('/:categoryId/custom-fields/from-existing', authMiddleware, createCustomFieldFromExisting);
+router.patch('/:categoryId', authMiddleware, updateCategory);
+router.delete('/:categoryId', authMiddleware, deleteCategory);
 
 export default router;

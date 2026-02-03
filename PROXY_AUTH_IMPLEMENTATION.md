@@ -53,7 +53,7 @@ req.user = {
 const AUTH_MODE = process.env.AUTH_MODE || 'mock';
 const authMiddleware = AUTH_MODE === 'proxy' 
   ? proxyAuthMiddleware 
-  : mockAuthMiddleware;
+  : authMiddleware;
 ```
 
 **Usage**:
