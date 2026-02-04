@@ -62,12 +62,13 @@ export class RagProcessor {
 
     try {
       // Check if docId already exists (idempotency safety)
-      const existingWorkItem = await prisma.$queryRawUnsafe<any[]>(`
-        SELECT doc_id FROM work_items WHERE id = ${workItemId} LIMIT 1
-      `);
+      const existingWorkItem = await prisma.workItem.findUnique({
+        where: { id: workItemId },
+        select: { docId: true }
+      });
 
-      if (existingWorkItem && existingWorkItem.length > 0 && existingWorkItem[0].doc_id) {
-        console.log(`[RAG Processor] Work item ${workItemId} already has docId: ${existingWorkItem[0].doc_id}, skipping creation`);
+      if (existingWorkItem?.docId) {
+        console.log(`[RAG Processor] Work item ${workItemId} already has docId: ${existingWorkItem.docId}, skipping creation`);
         return;
       }
 
@@ -87,9 +88,10 @@ export class RagProcessor {
       });
 
       // Save docId to database
-      await prisma.$executeRawUnsafe(`
-        UPDATE work_items SET doc_id = '${docId}' WHERE id = ${workItemId}
-      `);
+      await prisma.workItem.update({
+        where: { id: workItemId },
+        data: { docId: docId }
+      });
 
       console.log(`[RAG Processor] Indexed work item ${workItemId} with docId: ${docId}`);
     } catch (error) {
@@ -107,16 +109,17 @@ export class RagProcessor {
 
     try {
       // Get existing docId
-      const workItem = await prisma.$queryRawUnsafe<any[]>(`
-        SELECT doc_id FROM work_items WHERE id = ${workItemId} LIMIT 1
-      `);
+      const workItem = await prisma.workItem.findUnique({
+        where: { id: workItemId },
+        select: { docId: true }
+      });
 
-      if (!workItem || workItem.length === 0) {
+      if (!workItem) {
         console.warn(`[RAG Processor] Work item ${workItemId} not found`);
         return;
       }
 
-      const existingDocId = workItem[0].doc_id;
+      const existingDocId = workItem.docId;
 
       // Build document
       const document = await this.builder.buildDocument(Number(workItemId), orgId);
@@ -137,9 +140,10 @@ export class RagProcessor {
         });
 
         // Update docId in database
-        await prisma.$executeRawUnsafe(`
-          UPDATE work_items SET doc_id = '${newDocId}' WHERE id = ${workItemId}
-        `);
+        await prisma.workItem.update({
+          where: { id: workItemId },
+          data: { docId: newDocId }
+        });
 
         console.log(`[RAG Processor] Migrated work item ${workItemId} from legacy to GTWY docId: ${newDocId}`);
         return;
@@ -163,9 +167,10 @@ export class RagProcessor {
         });
 
         // Save docId to database
-        await prisma.$executeRawUnsafe(`
-          UPDATE work_items SET doc_id = '${docId}' WHERE id = ${workItemId}
-        `);
+        await prisma.workItem.update({
+          where: { id: workItemId },
+          data: { docId: docId }
+        });
 
         console.log(`[RAG Processor] Created resource for work item ${workItemId} with docId: ${docId}`);
       }
@@ -184,12 +189,13 @@ export class RagProcessor {
 
     try {
       // Get docId before deletion
-      const workItem = await prisma.$queryRawUnsafe<any[]>(`
-        SELECT doc_id FROM work_items WHERE id = ${workItemId} LIMIT 1
-      `);
+      const workItem = await prisma.workItem.findUnique({
+        where: { id: workItemId },
+        select: { docId: true }
+      });
 
-      if (workItem && workItem.length > 0 && workItem[0].doc_id) {
-        const docId = workItem[0].doc_id;
+      if (workItem?.docId) {
+        const docId = workItem.docId;
 
         // Skip deletion if legacy docId
         if (!this.client.isLegacyDocId(docId)) {
@@ -199,9 +205,10 @@ export class RagProcessor {
         }
 
         // Clear docId from database
-        await prisma.$executeRawUnsafe(`
-          UPDATE work_items SET doc_id = NULL WHERE id = ${workItemId}
-        `);
+        await prisma.workItem.update({
+          where: { id: workItemId },
+          data: { docId: null }
+        });
       }
 
       console.log(`[RAG Processor] Deleted work item ${workItemId}`);
@@ -225,9 +232,10 @@ export class RagProcessor {
     const prisma = getPrismaClient();
 
     // Get all work items in this category
-    const workItems = await prisma.$queryRawUnsafe<any[]>(`
-      SELECT id FROM work_items WHERE category_id = ${message.entity_id}
-    `);
+    const workItems = await prisma.workItem.findMany({
+      where: { categoryId: message.entity_id },
+      select: { id: true }
+    });
 
     console.log(`[RAG Processor] Updating ${workItems.length} work items in category ${message.entity_id}`);
 
@@ -246,17 +254,17 @@ export class RagProcessor {
     const prisma = getPrismaClient();
 
     // Get all work items using this custom field
-    const workItems = await prisma.$queryRawUnsafe<any[]>(`
-      SELECT DISTINCT work_item_id as id
-      FROM custom_field_values
-      WHERE custom_field_meta_data_id = ${message.entity_id}
-    `);
+    const workItems = await prisma.customFieldValue.findMany({
+      where: { customFieldMetaDataId: message.entity_id },
+      select: { workItemId: true },
+      distinct: ['workItemId']
+    });
 
     console.log(`[RAG Processor] Updating ${workItems.length} work items with custom field ${message.entity_id}`);
 
     // Update each work item in RAG
     for (const item of workItems) {
-      await this.processWorkItemUpdate(Number(item.id), message.org_id);
+      await this.processWorkItemUpdate(Number(item.workItemId), message.org_id);
     }
 
     console.log(`[RAG Processor] Completed custom field meta update for ${workItems.length} work items`);

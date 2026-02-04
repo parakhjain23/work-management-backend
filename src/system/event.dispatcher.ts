@@ -53,15 +53,14 @@ export class EventDispatcher {
     const prisma = getPrismaClient();
     
     try {
-      const result = await prisma.$queryRawUnsafe<any[]>(`
-        SELECT prompt_text
-        FROM system_prompts
-        WHERE id = ${promptId}
-          AND is_active = true
-        LIMIT 1
-      `);
+      const result = await prisma.systemPrompt.findFirst({
+        where: {
+          id: promptId
+        },
+        select: { promptTemplate: true }
+      });
 
-      return result.length > 0 ? result[0].prompt_text : null;
+      return result?.promptTemplate || null;
     } catch (error) {
       console.error('Error fetching system prompt:', error);
       return null;

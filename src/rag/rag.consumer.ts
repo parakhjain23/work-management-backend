@@ -47,13 +47,14 @@ export const ragSearch = async (req: Request, res: Response): Promise<void> => {
 
     // Query database to get work items by docId
     const prisma = getPrismaClient();
-    const placeholders = docIds.map((_, i) => `$${i + 1}`).join(', ');
-    const workItems = await prisma.$queryRawUnsafe<any[]>(`
-      SELECT id FROM work_items 
-      WHERE doc_id IN (${docIds.map(id => `'${id}'`).join(', ')})
-      AND org_id = ${req.user.org_id}
-      ORDER BY id DESC
-    `);
+    const workItems = await prisma.workItem.findMany({
+      where: {
+        docId: { in: docIds },
+        orgId: req.user.org_id
+      },
+      select: { id: true },
+      orderBy: { id: 'desc' }
+    });
 
     const workItemIds = workItems.map(item => Number(item.id));
 
