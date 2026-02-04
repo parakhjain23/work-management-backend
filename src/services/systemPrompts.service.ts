@@ -32,7 +32,7 @@ export class SystemPromptsService {
   /**
    * Purpose: Get all system prompts for an organization
    */
-  async findAll(orgId: bigint) {
+  async findAll(orgId: number) {
     return await this.prisma.systemPrompt.findMany({
       where: { orgId },
       orderBy: [
@@ -46,7 +46,7 @@ export class SystemPromptsService {
    * Purpose: Find active prompts that match the given event type
    * Checks if eventType is in the prompt's eventTypes array
    */
-  async findActiveByEventType(orgId: bigint, eventType: string) {
+  async findActiveByEventType(orgId: number, eventType: string) {
     return await this.prisma.systemPrompt.findMany({
       where: {
         orgId,
@@ -64,7 +64,7 @@ export class SystemPromptsService {
   /**
    * Purpose: Get system prompt by ID
    */
-  async findById(promptId: bigint, orgId: bigint) {
+  async findById(promptId: number, orgId: number) {
     const prompt = await this.prisma.systemPrompt.findFirst({
       where: { id: promptId, orgId }
     });
@@ -79,7 +79,7 @@ export class SystemPromptsService {
   /**
    * Purpose: Create new system prompt
    */
-  async create(orgId: bigint, userId: bigint, data: CreateSystemPromptDto) {
+  async create(orgId: number, userId: number, data: CreateSystemPromptDto) {
     const existing = await this.prisma.systemPrompt.findFirst({
       where: { orgId, keyName: data.keyName }
     });
@@ -108,7 +108,7 @@ export class SystemPromptsService {
   /**
    * Purpose: Update system prompt
    */
-  async update(promptId: bigint, orgId: bigint, userId: bigint, data: UpdateSystemPromptDto) {
+  async update(promptId: number, orgId: number, userId: number, data: UpdateSystemPromptDto) {
     await this.findById(promptId, orgId);
 
     return await this.prisma.systemPrompt.update({
@@ -123,7 +123,7 @@ export class SystemPromptsService {
   /**
    * Purpose: Delete system prompt
    */
-  async delete(promptId: bigint, orgId: bigint) {
+  async delete(promptId: number, orgId: number) {
     await this.findById(promptId, orgId);
 
     await this.prisma.systemPrompt.delete({
@@ -134,7 +134,7 @@ export class SystemPromptsService {
   /**
    * Purpose: Toggle system prompt active status
    */
-  async toggleActive(promptId: bigint, orgId: bigint, userId: bigint) {
+  async toggleActive(promptId: number, orgId: number, userId: number) {
     const prompt = await this.findById(promptId, orgId);
 
     return await this.prisma.systemPrompt.update({

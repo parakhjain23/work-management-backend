@@ -8,13 +8,13 @@ datasource db {
 }
 
 model Category {
-  id           BigInt       @id @default(autoincrement())
-  orgId        BigInt       @map("org_id")
+  id           Int          @id @default(autoincrement())
+  orgId        Int          @map("org_id")
   keyName      String       @map("key_name") @db.VarChar(255)
   externalTool String?      @map("external_tool") @db.VarChar(100)
   name         String       @db.VarChar(255)
-  createdBy    BigInt?      @map("created_by")
-  updatedBy    BigInt?      @map("updated_by")
+  createdBy    Int?         @map("created_by")
+  updatedBy    Int?         @map("updated_by")
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
   
@@ -27,21 +27,21 @@ model Category {
 }
 
 model WorkItem {
-  id          BigInt       @id @default(autoincrement())
-  orgId       BigInt       @map("org_id")
+  id          Int          @id @default(autoincrement())
+  orgId       Int          @map("org_id")
   externalId  String?      @map("external_id") @db.VarChar(255)
-  categoryId  BigInt?      @map("category_id")
+  categoryId  Int?         @map("category_id")
   title       String       @db.VarChar(500)
   description String?      @db.Text
   status      WorkItemStatus @default(CAPTURED)
   priority    WorkItemPriority?
-  assigneeId  BigInt?      @map("assignee_id")
-  createdBy   BigInt?      @map("created_by")
-  updatedBy   BigInt?      @map("updated_by")
+  assigneeId  Int?         @map("assignee_id")
+  createdBy   Int?         @map("created_by")
+  updatedBy   Int?         @map("updated_by")
   startDate   DateTime?    @map("start_date") @db.Date
   dueDate     DateTime?    @map("due_date") @db.Date
-  parentId    BigInt?      @map("parent_id")
-  rootParentId BigInt?     @map("root_parent_id")
+  parentId    Int?         @map("parent_id")
+  rootParentId Int?        @map("root_parent_id")
   docId       String?      @map("doc_id") @db.VarChar(255)
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
@@ -65,8 +65,8 @@ model WorkItem {
 }
 
 model WorkItemLog {
-  id         BigInt      @id @default(autoincrement())
-  workItemId BigInt      @map("work_item_id")
+  id         Int         @id @default(autoincrement())
+  workItemId Int         @map("work_item_id")
   logType    LogType     @map("log_type")
   oldValue   String?     @map("old_value") @db.Text
   newValue   String?     @map("new_value") @db.Text
@@ -79,9 +79,9 @@ model WorkItemLog {
 }
 
 model CategoryFollower {
-  id         BigInt      @id @default(autoincrement())
-  categoryId BigInt      @map("category_id")
-  userId     BigInt      @map("user_id")
+  id         Int         @id @default(autoincrement())
+  categoryId Int         @map("category_id")
+  userId     Int         @map("user_id")
   followedAt DateTime    @default(now()) @map("followed_at")
 
   category   Category    @relation(fields: [categoryId], references: [id])
@@ -91,17 +91,17 @@ model CategoryFollower {
 }
 
 model CustomFieldMetaData {
-  id          BigInt      @id @default(autoincrement())
-  orgId       BigInt      @map("org_id")
-  categoryId  BigInt      @map("category_id")
+  id          Int         @id @default(autoincrement())
+  orgId       Int         @map("org_id")
+  categoryId  Int         @map("category_id")
   name        String      @db.VarChar(255)
   keyName     String      @map("key_name") @db.VarChar(255)
   dataType    DataType    @map("data_type")
   enums       String?     @db.Text
   description String?     @db.Text
   meta        Json?
-  createdBy   BigInt?     @map("created_by")
-  updatedBy   BigInt?     @map("updated_by")
+  createdBy   Int?        @map("created_by")
+  updatedBy   Int?        @map("updated_by")
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
@@ -113,9 +113,9 @@ model CustomFieldMetaData {
 }
 
 model CustomFieldValue {
-  id                    BigInt      @id @default(autoincrement())
-  workItemId            BigInt      @map("work_item_id")
-  customFieldMetaDataId BigInt      @map("custom_field_meta_data_id")
+  id                    Int         @id @default(autoincrement())
+  workItemId            Int         @map("work_item_id")
+  customFieldMetaDataId Int         @map("custom_field_meta_data_id")
   valueNumber           Decimal?    @map("value_number") @db.Decimal(15, 4)
   valueText             String?     @map("value_text") @db.Text
   valueBoolean          Boolean?    @map("value_boolean")
@@ -173,8 +173,8 @@ enum CalculatedBy {
 }
 
 model SystemPrompt {
-  id              BigInt      @id @default(autoincrement())
-  orgId           BigInt      @map("org_id")
+  id              Int         @id @default(autoincrement())
+  orgId           Int         @map("org_id")
   
   name            String      @db.VarChar(255)
   keyName         String      @map("key_name") @db.VarChar(255)
@@ -187,8 +187,8 @@ model SystemPrompt {
   isActive        Boolean     @default(true) @map("is_active")
   priority        Int         @default(0)
   
-  createdBy       BigInt?     @map("created_by")
-  updatedBy       BigInt?     @map("updated_by")
+  createdBy       Int?        @map("created_by")
+  updatedBy       Int?        @map("updated_by")
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at")
 

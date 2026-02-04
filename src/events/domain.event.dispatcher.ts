@@ -102,9 +102,9 @@ export class DomainEventDispatcher {
    */
   public static workItemEvent(
     action: 'create' | 'update' | 'delete',
-    workItemId: bigint,
-    orgId: bigint,
-    categoryId: bigint | null,
+    workItemId: number,
+    orgId: number,
+    categoryId: number | null,
     triggeredBy: TriggerSource,
     changedFields: string[] = [],
     fieldChanges: Record<string, FieldChange> = {}
@@ -128,10 +128,10 @@ export class DomainEventDispatcher {
    */
   public static customFieldValueEvent(
     action: 'create' | 'update' | 'delete',
-    valueId: bigint,
-    workItemId: bigint,
-    orgId: bigint,
-    categoryId: bigint | null,
+    valueId: number,
+    workItemId: number,
+    orgId: number,
+    categoryId: number | null,
     triggeredBy: TriggerSource,
     changedFields: string[] = [],
     fieldChanges: Record<string, FieldChange> = {}
@@ -155,8 +155,8 @@ export class DomainEventDispatcher {
    */
   public static categoryEvent(
     action: 'create' | 'update' | 'delete',
-    categoryId: bigint,
-    orgId: bigint,
+    categoryId: number,
+    orgId: number,
     triggeredBy: TriggerSource,
     changedFields: string[] = [],
     fieldChanges: Record<string, FieldChange> = {}

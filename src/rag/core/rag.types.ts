@@ -9,7 +9,7 @@ export interface CollectionInfo {
 }
 
 export interface WorkItemDocument {
-  workItemId: bigint;
+  workItemId: number;
   title: string;
   content: string;
 }

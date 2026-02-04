@@ -8,7 +8,7 @@ export interface SqlExecutionResult {
   type?: 'SELECT' | 'MUTATION';
   data?: any[];
   rowsAffected?: number;
-  returnedIds?: (number | bigint)[];
+  returnedIds?: (number | number)[];
   error?: string;
 }
 

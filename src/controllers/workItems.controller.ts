@@ -7,12 +7,12 @@ const workItemsService = new WorkItemsService();
 
 export const getWorkItems = async (req: Request, res: Response): Promise<void> => {
   try {
-    const orgId = BigInt(req.user!.org_id);
+    const orgId = Number(req.user!.org_id);
     
     const filters: WorkItemFilters = {};
     
     if (req.query.categoryId) {
-      filters.categoryId = BigInt(req.query.categoryId as string);
+      filters.categoryId = Number(req.query.categoryId as string);
     }
     if (req.query.status && typeof req.query.status === 'string') {
       filters.status = req.query.status as WorkItemStatus;
@@ -48,8 +48,8 @@ export const getWorkItemsByCategory = async (req: Request, res: Response): Promi
       res.status(400).json({ success: false, error: 'Invalid category ID' });
       return;
     }
-    const categoryId = BigInt(categoryIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const categoryId = Number(categoryIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const workItems = await workItemsService.findByCategory(categoryId, orgId);
 
@@ -73,8 +73,8 @@ export const getWorkItemById = async (req: Request, res: Response): Promise<void
       res.status(400).json({ success: false, error: 'Invalid work item ID' });
       return;
     }
-    const workItemId = BigInt(workItemIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const workItemId = Number(workItemIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const workItem = await workItemsService.findById(workItemId, orgId);
 
@@ -103,20 +103,20 @@ export const createWorkItem = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const workItem = await workItemsService.create(orgId, userId, {
       title,
-      categoryId: categoryId ? BigInt(categoryId) : undefined,
+      categoryId: categoryId ? Number(categoryId) : undefined,
       description,
       status,
       priority,
-      assigneeId: assigneeId ? BigInt(assigneeId) : undefined,
+      assigneeId: assigneeId ? Number(assigneeId) : undefined,
       startDate: startDate ? new Date(startDate) : undefined,
       dueDate: dueDate ? new Date(dueDate) : undefined,
-      parentId: parentId ? BigInt(parentId) : undefined,
-      rootParentId: rootParentId ? BigInt(rootParentId) : undefined,
+      parentId: parentId ? Number(parentId) : undefined,
+      rootParentId: rootParentId ? Number(rootParentId) : undefined,
       externalId
     });
 
@@ -143,7 +143,7 @@ export const updateWorkItem = async (req: Request, res: Response): Promise<void>
       res.status(400).json({ success: false, error: 'Invalid work item ID' });
       return;
     }
-    const workItemId = BigInt(workItemIdParam);
+    const workItemId = Number(workItemIdParam);
     const { title, description, status, priority, categoryId, assigneeId, startDate, dueDate, externalId, createdBy, parentId, rootParentId, docId } = req.body;
 
     if (!title && !description && !status && !priority && !categoryId && assigneeId === undefined && !startDate && !dueDate && !externalId && createdBy === undefined && parentId === undefined && rootParentId === undefined && !docId) {
@@ -154,22 +154,22 @@ export const updateWorkItem = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const workItem = await workItemsService.update(workItemId, orgId, userId, {
       title,
       description,
       status,
       priority,
-      categoryId: categoryId ? BigInt(categoryId) : undefined,
-      assigneeId: assigneeId !== undefined ? (assigneeId ? BigInt(assigneeId) : null) : undefined,
+      categoryId: categoryId ? Number(categoryId) : undefined,
+      assigneeId: assigneeId !== undefined ? (assigneeId ? Number(assigneeId) : null) : undefined,
       startDate: startDate !== undefined ? (startDate ? new Date(startDate) : null) : undefined,
       dueDate: dueDate !== undefined ? (dueDate ? new Date(dueDate) : null) : undefined,
       externalId: externalId !== undefined ? externalId : undefined,
-      createdBy: createdBy !== undefined ? (createdBy ? BigInt(createdBy) : null) : undefined,
-      parentId: parentId !== undefined ? (parentId ? BigInt(parentId) : null) : undefined,
-      rootParentId: rootParentId !== undefined ? (rootParentId ? BigInt(rootParentId) : null) : undefined,
+      createdBy: createdBy !== undefined ? (createdBy ? Number(createdBy) : null) : undefined,
+      parentId: parentId !== undefined ? (parentId ? Number(parentId) : null) : undefined,
+      rootParentId: rootParentId !== undefined ? (rootParentId ? Number(rootParentId) : null) : undefined,
       docId: docId !== undefined ? docId : undefined
     });
 
@@ -196,8 +196,8 @@ export const deleteWorkItem = async (req: Request, res: Response): Promise<void>
       res.status(400).json({ success: false, error: 'Invalid work item ID' });
       return;
     }
-    const workItemId = BigInt(workItemIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const workItemId = Number(workItemIdParam);
+    const orgId = Number(req.user!.org_id);
 
     await workItemsService.delete(workItemId, orgId);
 
@@ -221,8 +221,8 @@ export const getWorkItemChildren = async (req: Request, res: Response): Promise<
       res.status(400).json({ success: false, error: 'Invalid work item ID' });
       return;
     }
-    const workItemId = BigInt(workItemIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const workItemId = Number(workItemIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const children = await workItemsService.findChildren(workItemId, orgId);
 
@@ -246,7 +246,7 @@ export const createWorkItemChild = async (req: Request, res: Response): Promise<
       res.status(400).json({ success: false, error: 'Invalid work item ID' });
       return;
     }
-    const parentId = BigInt(workItemIdParam);
+    const parentId = Number(workItemIdParam);
     const { title, description, status, priority, assigneeId, startDate, dueDate } = req.body;
 
     if (!title) {
@@ -257,16 +257,16 @@ export const createWorkItemChild = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     const workItem = await workItemsService.createChild(parentId, orgId, userId, {
-      categoryId: BigInt(0),
+      categoryId: Number(0),
       title,
       description,
       status,
       priority,
-      assigneeId: assigneeId ? BigInt(assigneeId) : undefined,
+      assigneeId: assigneeId ? Number(assigneeId) : undefined,
       startDate: startDate ? new Date(startDate) : undefined,
       dueDate: dueDate ? new Date(dueDate) : undefined
     });
@@ -297,8 +297,8 @@ export const getWorkItemFullData = async (req: Request, res: Response): Promise<
       return;
     }
     
-    const workItemId = BigInt(workItemIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const workItemId = Number(workItemIdParam);
+    const orgId = Number(req.user!.org_id);
     console.log('[getWorkItemFullData] Fetching data for workItemId:', workItemId.toString(), 'orgId:', orgId.toString());
 
     const fullData = await workItemsService.getFullData(workItemId, orgId);

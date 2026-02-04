@@ -17,11 +17,11 @@ export enum ActionType {
 export interface MutationEvent {
   entity: EntityType;
   action: ActionType;
-  entity_id: number | bigint;
+  entity_id: number | number;
   changed_fields?: string[];
   metadata?: any;
-  org_id?: number | bigint;
-  user_id?: number | bigint;
+  org_id?: number | number;
+  user_id?: number | number;
 }
 
 export class EventDispatcher {
@@ -109,7 +109,7 @@ export class EventDispatcher {
    */
   public static workItemEvent(
     action: ActionType,
-    workItemId: number | bigint,
+    workItemId: number | number,
     changedFields?: string[],
     metadata?: any
   ): MutationEvent {
@@ -127,7 +127,7 @@ export class EventDispatcher {
    */
   public static categoryEvent(
     action: ActionType,
-    categoryId: number | bigint,
+    categoryId: number | number,
     changedFields?: string[],
     metadata?: any
   ): MutationEvent {
@@ -145,7 +145,7 @@ export class EventDispatcher {
    */
   public static customFieldValueEvent(
     action: ActionType,
-    workItemId: number | bigint,
+    workItemId: number | number,
     changedFields?: string[],
     metadata?: any
   ): MutationEvent {
@@ -163,7 +163,7 @@ export class EventDispatcher {
    */
   public static customFieldMetaEvent(
     action: ActionType,
-    fieldId: number | bigint,
+    fieldId: number | number,
     changedFields?: string[],
     metadata?: any
   ): MutationEvent {

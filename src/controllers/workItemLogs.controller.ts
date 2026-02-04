@@ -10,8 +10,8 @@ export const getWorkItemLogs = async (req: Request, res: Response): Promise<void
       res.status(400).json({ success: false, error: 'Invalid work item ID' });
       return;
     }
-    const workItemId = BigInt(workItemIdParam);
-    const orgId = BigInt(req.user!.org_id);
+    const workItemId = Number(workItemIdParam);
+    const orgId = Number(req.user!.org_id);
 
     const logs = await workItemLogsService.findByWorkItem(workItemId, orgId);
 

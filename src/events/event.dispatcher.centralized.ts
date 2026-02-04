@@ -14,8 +14,8 @@ export type TriggerSource = 'user' | 'ai' | 'system';
 export interface StandardEvent {
   entity: EntityType;
   action: ActionType;
-  entity_id: number | bigint;
-  parent_id?: number | bigint;
+  entity_id: number | number;
+  parent_id?: number | number;
   changed_fields?: string[];
   triggered_by: TriggerSource;
   timestamp: string;
@@ -134,10 +134,10 @@ export class CentralizedEventDispatcher {
    */
   public static workItemEvent(
     action: ActionType,
-    entityId: number | bigint,
+    entityId: number | number,
     triggeredBy: TriggerSource,
     changedFields?: string[],
-    parentId?: number | bigint
+    parentId?: number | number
   ): StandardEvent {
     return {
       entity: 'work_item',
@@ -155,7 +155,7 @@ export class CentralizedEventDispatcher {
    */
   public static categoryEvent(
     action: ActionType,
-    entityId: number | bigint,
+    entityId: number | number,
     triggeredBy: TriggerSource,
     changedFields?: string[]
   ): StandardEvent {
@@ -174,7 +174,7 @@ export class CentralizedEventDispatcher {
    */
   public static customFieldEvent(
     action: ActionType,
-    entityId: number | bigint,
+    entityId: number | number,
     triggeredBy: TriggerSource,
     changedFields?: string[]
   ): StandardEvent {
@@ -193,7 +193,7 @@ export class CentralizedEventDispatcher {
    */
   public static customFieldValueEvent(
     action: ActionType,
-    workItemId: number | bigint,
+    workItemId: number | number,
     triggeredBy: TriggerSource,
     changedFields?: string[]
   ): StandardEvent {

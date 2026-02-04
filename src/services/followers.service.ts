@@ -6,7 +6,7 @@ export class FollowersService {
   /**
    * Purpose: Get all followers for a category
    */
-  async getFollowersByCategory(categoryId: bigint, orgId: bigint) {
+  async getFollowersByCategory(categoryId: number, orgId: number) {
     const category = await this.prisma.category.findFirst({
       where: { id: categoryId, orgId }
     });
@@ -24,7 +24,7 @@ export class FollowersService {
   /**
    * Purpose: Get all categories followed by a user
    */
-  async getCategoriesFollowedByUser(userId: bigint, orgId: bigint) {
+  async getCategoriesFollowedByUser(userId: number, orgId: number) {
     return await this.prisma.categoryFollower.findMany({
       where: {
         userId,
@@ -47,7 +47,7 @@ export class FollowersService {
   /**
    * Purpose: Check if user is following a category
    */
-  async isFollowing(categoryId: bigint, userId: bigint, orgId: bigint): Promise<boolean> {
+  async isFollowing(categoryId: number, userId: number, orgId: number): Promise<boolean> {
     const category = await this.prisma.category.findFirst({
       where: { id: categoryId, orgId }
     });
@@ -66,7 +66,7 @@ export class FollowersService {
   /**
    * Purpose: Follow a category
    */
-  async followCategory(categoryId: bigint, userId: bigint, orgId: bigint) {
+  async followCategory(categoryId: number, userId: number, orgId: number) {
     const category = await this.prisma.category.findFirst({
       where: { id: categoryId, orgId }
     });
@@ -94,7 +94,7 @@ export class FollowersService {
   /**
    * Purpose: Unfollow a category
    */
-  async unfollowCategory(categoryId: bigint, userId: bigint, orgId: bigint) {
+  async unfollowCategory(categoryId: number, userId: number, orgId: number) {
     const category = await this.prisma.category.findFirst({
       where: { id: categoryId, orgId }
     });
@@ -121,7 +121,7 @@ export class FollowersService {
   /**
    * Purpose: Get follower count for a category
    */
-  async getFollowerCount(categoryId: bigint, orgId: bigint): Promise<number> {
+  async getFollowerCount(categoryId: number, orgId: number): Promise<number> {
     const category = await this.prisma.category.findFirst({
       where: { id: categoryId, orgId }
     });

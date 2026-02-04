@@ -40,8 +40,8 @@ export const executeIntent = async (req: Request, res: Response): Promise<void> 
     }
 
     // Get user context
-    const orgId = BigInt(req.user!.org_id);
-    const userId = BigInt(req.user!.id);
+    const orgId = Number(req.user!.org_id);
+    const userId = Number(req.user!.id);
 
     console.log(`[Intent API] Processing intent: ${intent} for org: ${orgId}, thread: ${threadId}`);
 

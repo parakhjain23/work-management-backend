@@ -51,7 +51,7 @@ export class RagProducer {
     }
   }
 
-  private async indexWorkItem(workItemId: number | bigint, sql?: string): Promise<void> {
+  private async indexWorkItem(workItemId: number | number, sql?: string): Promise<void> {
     const orgId = await this.extractOrgId(workItemId);
     if (!orgId) {
       console.warn(`[RAG Producer] Cannot index work item ${workItemId} - no org_id found`);
@@ -60,7 +60,7 @@ export class RagProducer {
 
     const collectionId = await this.client.createCollection(orgId);
 
-    const document = await this.builder.buildDocument(BigInt(workItemId));
+    const document = await this.builder.buildDocument(Number(workItemId));
     if (!document) {
       console.warn(`[RAG Producer] Cannot build document for work item ${workItemId}`);
       return;
@@ -72,7 +72,7 @@ export class RagProducer {
     await this.client.addResource(collectionId, resourceId, document.title, document.content, ownerId);
   }
 
-  private async updateWorkItem(workItemId: number | bigint, sql?: string): Promise<void> {
+  private async updateWorkItem(workItemId: number | number, sql?: string): Promise<void> {
     if (!this.shouldUpdateRag(sql)) {
       return;
     }
@@ -82,7 +82,7 @@ export class RagProducer {
       return;
     }
 
-    const document = await this.builder.buildDocument(BigInt(workItemId));
+    const document = await this.builder.buildDocument(Number(workItemId));
     if (!document) {
       return;
     }
@@ -99,7 +99,7 @@ export class RagProducer {
     }
   }
 
-  private async deleteWorkItem(workItemId: number | bigint): Promise<void> {
+  private async deleteWorkItem(workItemId: number | number): Promise<void> {
     const resourceId = `workItem:${workItemId}`;
     await this.client.deleteResource(resourceId);
   }
@@ -137,7 +137,7 @@ export class RagProducer {
     return lowerSql.includes('name') || lowerSql.includes('description');
   }
 
-  private async updateWorkItemsInCategory(categoryId: number | bigint): Promise<void> {
+  private async updateWorkItemsInCategory(categoryId: number | number): Promise<void> {
     try {
       const { getPrismaClient } = await import('../db/prisma.js');
       const prisma = getPrismaClient();
@@ -158,7 +158,7 @@ export class RagProducer {
     }
   }
 
-  private async updateWorkItemsWithCustomField(customFieldMetaDataId: number | bigint): Promise<void> {
+  private async updateWorkItemsWithCustomField(customFieldMetaDataId: number | number): Promise<void> {
     try {
       const { getPrismaClient } = await import('../db/prisma.js');
       const prisma = getPrismaClient();
@@ -181,7 +181,7 @@ export class RagProducer {
     }
   }
 
-  private async extractWorkItemIdFromCustomField(sql?: string): Promise<number | bigint | null> {
+  private async extractWorkItemIdFromCustomField(sql?: string): Promise<number | number | null> {
     if (!sql) {
       return null;
     }
@@ -201,7 +201,7 @@ export class RagProducer {
     return null;
   }
 
-  private async extractOrgId(workItemId: number | bigint): Promise<string | null> {
+  private async extractOrgId(workItemId: number | number): Promise<string | null> {
     try {
       const { getPrismaClient } = await import('../db/prisma.js');
       const prisma = getPrismaClient();

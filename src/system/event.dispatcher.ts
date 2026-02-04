@@ -1,19 +1,19 @@
 import { getPrismaClient } from '../db/prisma.js';
 
 export interface EventMatch {
-  eventId: bigint;
-  ruleId: bigint;
-  promptId: bigint;
+  eventId: number;
+  ruleId: number;
+  promptId: number;
   eventType: string;
   entityType: string;
-  entityId?: bigint;
+  entityId?: number;
 }
 
 export class EventDispatcher {
   public async findMatchingRules(event: {
     entity_type: string;
     action: string;
-    entity_id?: number | bigint;
+    entity_id?: number | number;
   }): Promise<EventMatch[]> {
     const prisma = getPrismaClient();
     
@@ -36,12 +36,12 @@ export class EventDispatcher {
       `);
 
       return rules.map(rule => ({
-        eventId: BigInt(0),
-        ruleId: BigInt(rule.rule_id),
-        promptId: BigInt(rule.prompt_id),
+        eventId: Number(0),
+        ruleId: Number(rule.rule_id),
+        promptId: Number(rule.prompt_id),
         eventType: rule.event_type,
         entityType: rule.entity_type,
-        entityId: event.entity_id ? BigInt(event.entity_id) : undefined
+        entityId: event.entity_id ? Number(event.entity_id) : undefined
       }));
     } catch (error) {
       console.error('Error finding matching rules:', error);
@@ -49,7 +49,7 @@ export class EventDispatcher {
     }
   }
 
-  public async getSystemPrompt(promptId: bigint): Promise<string | null> {
+  public async getSystemPrompt(promptId: number): Promise<string | null> {
     const prisma = getPrismaClient();
     
     try {

@@ -16,7 +16,7 @@ export interface UpdateCategoryDto {
 export class CategoriesService {
   private prisma = getPrismaClient();
 
-  async findAll(orgId: bigint) {
+  async findAll(orgId: number) {
     return await this.prisma.category.findMany({
       where: { orgId },
       include: {
@@ -26,7 +26,7 @@ export class CategoriesService {
     });
   }
 
-  async findById(categoryId: bigint, orgId: bigint) {
+  async findById(categoryId: number, orgId: number) {
     const category = await this.prisma.category.findFirst({
       where: {
         id: categoryId,
@@ -47,7 +47,7 @@ export class CategoriesService {
   /**
    * Purpose: Create a new category and emit creation event
    */
-  async create(orgId: bigint, userId: bigint, data: CreateCategoryDto) {
+  async create(orgId: number, userId: number, data: CreateCategoryDto) {
     const normalizedKeyName = data.keyName.toLowerCase();
 
     const existing = await this.prisma.category.findFirst({
@@ -100,7 +100,7 @@ export class CategoriesService {
   /**
    * Purpose: Update category and emit update event with changed fields
    */
-  async update(categoryId: bigint, orgId: bigint, userId: bigint, data: UpdateCategoryDto) {
+  async update(categoryId: number, orgId: number, userId: number, data: UpdateCategoryDto) {
     const category = await this.findById(categoryId, orgId);
 
     // Track field changes
@@ -148,7 +148,7 @@ export class CategoriesService {
   /**
    * Purpose: Delete category and emit deletion event
    */
-  async delete(categoryId: bigint, orgId: bigint) {
+  async delete(categoryId: number, orgId: number) {
     const category = await this.findById(categoryId, orgId);
 
     const workItemCount = await this.prisma.workItem.count({
