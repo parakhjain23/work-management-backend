@@ -98,23 +98,3 @@ export const deleteSystemPrompt = async (req: Request, res: Response): Promise<v
     res.status(404).json({ success: false, error: error.message });
   }
 };
-
-/**
- * Purpose: Toggle system prompt active status
- */
-export const toggleSystemPrompt = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const promptId = Number(req.params.promptId);
-    const orgId = Number(req.user!.org_id);
-    const userId = Number(req.user!.id);
-
-    const prompt = await service.toggleActive(promptId, orgId, userId);
-
-    res.json({
-      success: true,
-      data: serializeBigInt(prompt)
-    });
-  } catch (error: any) {
-    res.status(404).json({ success: false, error: error.message });
-  }
-};

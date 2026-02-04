@@ -7,23 +7,16 @@ import { getPrismaClient } from '../db/prisma.js';
 
 export interface CreateSystemPromptDto {
   name: string;
-  keyName: string;
-  description?: string;
-  eventType: string;
+  eventType?: string;
   conditionCode?: string;
   promptTemplate: string;
-  isActive?: boolean;
-  priority?: number;
 }
 
 export interface UpdateSystemPromptDto {
   name?: string;
-  description?: string;
   eventType?: string;
   conditionCode?: string;
   promptTemplate?: string;
-  isActive?: boolean;
-  priority?: number;
 }
 
 export class SystemPromptsService {
@@ -35,25 +28,23 @@ export class SystemPromptsService {
   async findAll(orgId: number) {
     return await this.prisma.systemPrompt.findMany({
       where: { orgId },
-      orderBy: [
-        { priority: 'desc' },
-        { createdAt: 'desc' }
-      ]
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
   }
 
   /**
-   * Purpose: Find active prompts by event type
+   * Purpose: Find prompts by event type
    */
-  async findActiveByEventType(orgId: number, eventType: string) {
+  async findByEventType(orgId: number, eventType: string) {
     return await this.prisma.systemPrompt.findMany({
       where: {
         orgId,
-        eventType,
-        isActive: true
+        eventType
       },
       orderBy: {
-        priority: 'desc'
+        createdAt: 'desc'
       }
     });
   }
@@ -74,47 +65,84 @@ export class SystemPromptsService {
   }
 
   /**
-   * Purpose: Create new system prompt
+   * Purpose: Create new system prompt and emit event
    */
   async create(orgId: number, userId: number, data: CreateSystemPromptDto) {
     const existing = await this.prisma.systemPrompt.findFirst({
-      where: { orgId, keyName: data.keyName }
+      where: { orgId, name: data.name }
     });
 
     if (existing) {
-      throw new Error('System prompt with this key_name already exists');
+      throw new Error('System prompt with this name already exists');
     }
 
-    return await this.prisma.systemPrompt.create({
+    const prompt = await this.prisma.systemPrompt.create({
       data: {
         orgId,
         name: data.name,
-        keyName: data.keyName,
-        description: data.description,
-        eventType: data.eventType,
-        conditionCode: data.conditionCode,
+        eventType: data.eventType || null,
+        conditionCode: data.conditionCode || null,
         promptTemplate: data.promptTemplate,
-        isActive: data.isActive ?? true,
-        priority: data.priority ?? 0,
         createdBy: userId,
         updatedBy: userId
       }
     });
+
+    // Emit domain event for AI condition generation only if eventType is provided
+    if (prompt.eventType) {
+      const { domainEventDispatcher, DomainEventDispatcher } = await import('../events/domain.event.dispatcher.js');
+      await domainEventDispatcher.emit(
+        DomainEventDispatcher.systemPromptEvent(
+          'create',
+          Number(prompt.id),
+          Number(orgId),
+          'user',
+          prompt.name,
+          prompt.eventType,
+          prompt.conditionCode,
+          prompt.promptTemplate,
+          ['name', 'eventType', 'promptTemplate']
+        )
+      );
+    }
+
+    return prompt;
   }
 
   /**
-   * Purpose: Update system prompt
+   * Purpose: Update system prompt and emit event
    */
   async update(promptId: number, orgId: number, userId: number, data: UpdateSystemPromptDto) {
     await this.findById(promptId, orgId);
 
-    return await this.prisma.systemPrompt.update({
+    const prompt = await this.prisma.systemPrompt.update({
       where: { id: promptId },
       data: {
         ...data,
         updatedBy: userId
       }
     });
+
+    // Emit domain event for AI condition regeneration only if eventType is provided
+    if (prompt.eventType) {
+      const changedFields = Object.keys(data);
+      const { domainEventDispatcher, DomainEventDispatcher } = await import('../events/domain.event.dispatcher.js');
+      await domainEventDispatcher.emit(
+        DomainEventDispatcher.systemPromptEvent(
+          'update',
+          Number(prompt.id),
+          Number(orgId),
+          'user',
+          prompt.name,
+          prompt.eventType,
+          prompt.conditionCode,
+          prompt.promptTemplate,
+          changedFields
+        )
+      );
+    }
+
+    return prompt;
   }
 
   /**
@@ -128,18 +156,4 @@ export class SystemPromptsService {
     });
   }
 
-  /**
-   * Purpose: Toggle system prompt active status
-   */
-  async toggleActive(promptId: number, orgId: number, userId: number) {
-    const prompt = await this.findById(promptId, orgId);
-
-    return await this.prisma.systemPrompt.update({
-      where: { id: promptId },
-      data: {
-        isActive: !prompt.isActive,
-        updatedBy: userId
-      }
-    });
-  }
 }

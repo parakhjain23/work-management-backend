@@ -3,10 +3,10 @@
  * Executes user-defined conditions in a sandboxed environment
  */
 
-import { DomainEvent } from '../types/events.types.js';
+import { EventData } from '../types/events.types.js';
 
 export interface EvaluationContext {
-  event: DomainEvent;
+  event: EventData;
   workItemData?: any;
 }
 

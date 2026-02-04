@@ -4,8 +4,7 @@ import {
   getSystemPromptById,
   createSystemPrompt,
   updateSystemPrompt,
-  deleteSystemPrompt,
-  toggleSystemPrompt
+  deleteSystemPrompt
 } from '../controllers/systemPrompts.controller.js';
 import { authMiddleware } from '../middleware/auth.proxy.js';
 
@@ -15,7 +14,6 @@ router.get('/', authMiddleware, getSystemPrompts);
 router.get('/:promptId', authMiddleware, getSystemPromptById);
 router.post('/', authMiddleware, createSystemPrompt);
 router.patch('/:promptId', authMiddleware, updateSystemPrompt);
-router.patch('/:promptId/toggle', authMiddleware, toggleSystemPrompt);
 router.delete('/:promptId', authMiddleware, deleteSystemPrompt);
 
 export default router;

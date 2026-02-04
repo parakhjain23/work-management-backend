@@ -3,21 +3,30 @@
 ## Overview
 This document shows the exact data structure available to AI when generating condition code for system prompts. The condition evaluator receives this data and executes JavaScript code to determine if a prompt should trigger.
 
+## Event Structure (New)
+Domain events now have an `actionType` field for routing and nest all data under a `data` property:
+- **actionType**: `"work_item"` | `"system_prompt"` - Routes events to appropriate handlers
+- **data**: Contains all event and entity information
+
+The worker uses switch-case on `actionType` to route events:
+- `work_item` → Evaluate conditions and trigger prompts
+- `system_prompt` → AI generates/validates condition code (TODO)
+
 ---
 
 ## Data Structure Available in Conditions
 
-When a domain event is triggered, the condition evaluator receives a single `data` object containing both event information and full work item context **in a flat structure**:
+When a domain event is triggered, the condition evaluator receives a single `data` object containing both event information and full work item context **in a flat structure** (flattened from `event.data` + `workItemData`):
 
 ### Complete `data` Object Structure
 
 ```javascript
 {
   // ========================================
-  // EVENT FIELDS (from domain event)
+  // EVENT FIELDS (from event.data)
   // ========================================
   
-  "entity": "work_item",              // Entity type: "work_item" | "custom_field_value" | "category"
+  "entity": "work_item",              // Entity type: "work_item" | "category" | "system_prompt"
   "action": "update",                 // Action: "create" | "update" | "delete"
   "work_item_id": "8",                // Work item ID (optional for category events)
   "org_id": "1",                      // Organization ID

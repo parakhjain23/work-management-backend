@@ -11,7 +11,7 @@ const EXCHANGE_TYPE = 'topic';
 /**
  * Purpose: Publish domain event to RabbitMQ exchange
  * Events are routed based on pattern: {entity}.{action}
- * Example: work_item.update, custom_field_value.create
+ * Example: work_item.update, system_prompt.create
  */
 export async function publishDomainEvent(event: DomainEvent): Promise<void> {
   try {
@@ -28,12 +28,10 @@ export async function publishDomainEvent(event: DomainEvent): Promise<void> {
     });
 
     // Create routing key: entity.action (e.g., work_item.update)
-    const routingKey = `${event.entity}.${event.action}`;
+    const routingKey = `${event.data.entity}.${event.data.action}`;
 
-    // Serialize event (convert BigInt to string)
-    const eventPayload = JSON.stringify(event, (_, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    );
+    // Serialize event (no BigInt conversion needed)
+    const eventPayload = JSON.stringify(event);
 
     // Publish to exchange
     channel.publish(
@@ -48,9 +46,10 @@ export async function publishDomainEvent(event: DomainEvent): Promise<void> {
     );
 
     console.log(`[Domain Event Publisher] Published: ${routingKey}`, {
-      entity_id: event.entity_id,
-      work_item_id: event.work_item_id,
-      changedFields: event.changedFields
+      actionType: event.actionType,
+      entity_id: event.data.entity_id,
+      work_item_id: event.data.work_item_id,
+      changedFields: event.data.changedFields
     });
   } catch (error) {
     console.error('[Domain Event Publisher] Failed to publish event:', error);

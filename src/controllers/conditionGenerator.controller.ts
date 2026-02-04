@@ -5,13 +5,34 @@ import { Request, Response } from 'express';
  * No authentication required - this is reference data for AI
  */
 export const getConditionGeneratorData = async (_req: Request, res: Response): Promise<void> => {
-  const exampleData = {
+  // Example event structure with actionType and data nesting
+  const exampleEvent = {
+    actionType: "work_item",
+    data: {
+      entity: "work_item",
+      action: "update",
+      entity_id: "8",
+      work_item_id: "8",
+      org_id: "1",
+      category_id: "4",
+      triggered_by: "user",
+      changedFields: ["rating"],
+      fieldChanges: {
+        rating: {
+          oldValue: 3,
+          newValue: 5,
+          fieldType: "custom_field"
+        }
+      },
+      timestamp: new Date().toISOString()
+    }
+  };
+
+  // Example data object as seen by condition code (flattened from event.data + workItemData)
+  const exampleDataForConditions = {
+    // Event fields
     entity: "work_item",
     action: "update",
-    work_item_id: "8",
-    org_id: "1",
-    category_id: "4",
-    triggered_by: "user",
     changedFields: ["rating"],
     fieldChanges: {
       rating: {
@@ -20,6 +41,11 @@ export const getConditionGeneratorData = async (_req: Request, res: Response): P
         fieldType: "custom_field"
       }
     },
+    triggered_by: "user",
+    work_item_id: "8",
+    org_id: "1",
+    category_id: "4",
+    // Work item fields
     id: "8",
     title: "Login flow",
     description: "Login flow is very slow.",
@@ -84,8 +110,9 @@ export const getConditionGeneratorData = async (_req: Request, res: Response): P
 
   res.json({
     success: true,
-    data: exampleData,
-    description: "Example data structure available in system prompt condition evaluation",
-    usage: "Use this structure to generate JavaScript condition code that returns boolean. All fields are at root level in the data object."
+    eventStructure: exampleEvent,
+    conditionDataStructure: exampleDataForConditions,
+    description: "Event structure shows how events are emitted with actionType. Condition data structure shows the flattened data object available in condition code evaluation.",
+    usage: "Use conditionDataStructure to generate JavaScript condition code that returns boolean. All fields are at root level in the data object."
   });
 };

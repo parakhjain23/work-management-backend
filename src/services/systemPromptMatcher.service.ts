@@ -1,55 +1,50 @@
 /**
- * Purpose: Match domain events to active system prompts
+ * Purpose: Match domain events to system prompts
  * Finds prompts that should be triggered for a given event
  */
 
-import { DomainEvent } from '../types/events.types.js';
+import { EventData } from '../types/events.types.js';
 import { SystemPromptsService } from './systemPrompts.service.js';
 
 export interface MatchedPrompt {
   promptId: number;
   name: string;
-  keyName: string;
   conditionCode: string;
   promptTemplate: string;
-  priority: number;
 }
 
 export class SystemPromptMatcher {
   private systemPromptsService = new SystemPromptsService();
 
   /**
-   * Purpose: Find all active prompts that match the event type
-   * Returns prompts sorted by priority (highest first)
+   * Purpose: Find all prompts that match the event type
    */
-  async matchEvent(event: DomainEvent): Promise<MatchedPrompt[]> {
+  async matchEvent(eventData: EventData): Promise<MatchedPrompt[]> {
     try {
       // Parse org_id from event
-      const orgId = Number(event.org_id);
+      const orgId = Number(eventData.org_id);
 
       // Construct event type from entity and action
-      const eventType = `${event.entity}.${event.action}`;
+      const eventType = `${eventData.entity}.${eventData.action}`;
 
       console.log(`[System Prompt Matcher] Matching event: ${eventType} for org: ${orgId}`);
 
-      // Get active prompts for this event type
-      const prompts = await this.systemPromptsService.findActiveByEventType(orgId, eventType);
+      // Get prompts for this event type
+      const prompts = await this.systemPromptsService.findByEventType(orgId, eventType);
 
       if (prompts.length === 0) {
-        console.log(`[System Prompt Matcher] No active prompts found for ${eventType}`);
+        console.log(`[System Prompt Matcher] No prompts found for ${eventType}`);
         return [];
       }
 
-      console.log(`[System Prompt Matcher] Found ${prompts.length} active prompts for ${eventType}`);
+      console.log(`[System Prompt Matcher] Found ${prompts.length} prompt(s) for ${eventType}`);
 
       // Map to MatchedPrompt format
       const matchedPrompts: MatchedPrompt[] = prompts.map(p => ({
-        promptId: p.id,
+        promptId: Number(p.id),
         name: p.name,
-        keyName: p.keyName,
-        conditionCode: p.conditionCode,
-        promptTemplate: p.promptTemplate,
-        priority: p.priority
+        conditionCode: p.conditionCode || '',
+        promptTemplate: p.promptTemplate
       }));
 
       return matchedPrompts;
@@ -60,20 +55,18 @@ export class SystemPromptMatcher {
   }
 
   /**
-   * Purpose: Get all event types that have active prompts for an organization
+   * Purpose: Get all event types that have prompts for an organization
    */
-  async getActiveEventTypes(orgId: number): Promise<string[]> {
+  async getEventTypes(orgId: number): Promise<string[]> {
     try {
       const allPrompts = await this.systemPromptsService.findAll(orgId);
       
-      const activeEventTypes = allPrompts
-        .filter(p => p.isActive)
-        .map(p => p.eventType);
+      const eventTypes = allPrompts.map(p => p.eventType);
 
       // Return unique event types
-      return [...new Set(activeEventTypes)];
+      return [...new Set(eventTypes)];
     } catch (error) {
-      console.error('[System Prompt Matcher] Error getting active event types:', error);
+      console.error('[System Prompt Matcher] Error getting event types:', error);
       return [];
     }
   }

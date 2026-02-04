@@ -64,37 +64,42 @@ export class DomainEventDispatcher {
    * Purpose: Validate event structure
    */
   private validateEvent(event: DomainEvent): void {
-    if (!event.entity) throw new Error('Event must have entity field');
-    if (!event.action) throw new Error('Event must have action field');
-    if (!event.entity_id) throw new Error('Event must have entity_id field');
+    if (!event.actionType) throw new Error('Event must have actionType field');
+    if (!event.data) throw new Error('Event must have data field');
+    if (!event.data.entity) throw new Error('Event must have entity field');
+    if (!event.data.action) throw new Error('Event must have action field');
+    if (!event.data.entity_id) throw new Error('Event must have entity_id field');
     
-    // work_item_id is optional for category events
-    if (event.entity !== 'category' && !event.work_item_id) {
+    // work_item_id is optional for category and system_prompt events
+    if (event.data.entity !== 'category' && event.data.entity !== 'system_prompt' && !event.data.work_item_id) {
       throw new Error('Event must have work_item_id field');
     }
     
-    if (!event.org_id) throw new Error('Event must have org_id field');
-    if (!event.triggered_by) throw new Error('Event must have triggered_by field');
-    if (!event.timestamp) throw new Error('Event must have timestamp field');
+    if (!event.data.org_id) throw new Error('Event must have org_id field');
+    if (!event.data.triggered_by) throw new Error('Event must have triggered_by field');
+    if (!event.data.timestamp) throw new Error('Event must have timestamp field');
 
-    const validEntities = ['work_item', 'custom_field_value', 'category'];
-    if (!validEntities.includes(event.entity)) {
-      throw new Error(`Invalid entity type: ${event.entity}`);
+    const validActionTypes = ['work_item', 'system_prompt'];
+    if (!validActionTypes.includes(event.actionType)) {
+      throw new Error(`Invalid actionType: ${event.actionType}`);
+    }
+
+    const validEntities = ['work_item', 'category', 'system_prompt'];
+    if (!validEntities.includes(event.data.entity)) {
+      throw new Error(`Invalid entity type: ${event.data.entity}`);
     }
 
     const validActions = ['create', 'update', 'delete'];
-    if (!validActions.includes(event.action)) {
-      throw new Error(`Invalid action type: ${event.action}`);
+    if (!validActions.includes(event.data.action)) {
+      throw new Error(`Invalid action type: ${event.data.action}`);
     }
   }
 
   /**
-   * Purpose: Convert BigInt to string for JSON serialization
+   * Purpose: Serialize event for logging (no BigInt conversion needed as we use number now)
    */
   private serializeEvent(event: DomainEvent): any {
-    return JSON.parse(JSON.stringify(event, (_, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    ));
+    return event;
   }
 
   /**
@@ -110,16 +115,19 @@ export class DomainEventDispatcher {
     fieldChanges: Record<string, FieldChange> = {}
   ): DomainEvent {
     return {
-      entity: 'work_item',
-      action,
-      entity_id: workItemId.toString(),
-      work_item_id: workItemId.toString(),
-      org_id: orgId.toString(),
-      category_id: categoryId?.toString() || '',
-      changedFields,
-      fieldChanges,
-      triggered_by: triggeredBy,
-      timestamp: new Date().toISOString()
+      actionType: 'work_item',
+      data: {
+        entity: 'work_item',
+        action,
+        entity_id: workItemId.toString(),
+        work_item_id: workItemId.toString(),
+        org_id: orgId.toString(),
+        category_id: categoryId?.toString() || '',
+        changedFields,
+        fieldChanges,
+        triggered_by: triggeredBy,
+        timestamp: new Date().toISOString()
+      }
     };
   }
 
@@ -138,16 +146,19 @@ export class DomainEventDispatcher {
     fieldChanges: Record<string, FieldChange> = {}
   ): DomainEvent {
     return {
-      entity: 'work_item',
-      action,
-      entity_id: workItemId.toString(),
-      work_item_id: workItemId.toString(),
-      org_id: orgId.toString(),
-      category_id: categoryId?.toString() || '',
-      changedFields,
-      fieldChanges,
-      triggered_by: triggeredBy,
-      timestamp: new Date().toISOString()
+      actionType: 'work_item',
+      data: {
+        entity: 'work_item',
+        action,
+        entity_id: workItemId.toString(),
+        work_item_id: workItemId.toString(),
+        org_id: orgId.toString(),
+        category_id: categoryId?.toString() || '',
+        changedFields,
+        fieldChanges,
+        triggered_by: triggeredBy,
+        timestamp: new Date().toISOString()
+      }
     };
   }
 
@@ -163,16 +174,55 @@ export class DomainEventDispatcher {
     fieldChanges: Record<string, FieldChange> = {}
   ): DomainEvent {
     return {
-      entity: 'category',
-      action,
-      entity_id: categoryId.toString(),
-      work_item_id: '', // Categories don't have work items
-      org_id: orgId.toString(),
-      category_id: categoryId.toString(),
-      changedFields,
-      fieldChanges,
-      triggered_by: triggeredBy,
-      timestamp: new Date().toISOString()
+      actionType: 'work_item',
+      data: {
+        entity: 'category',
+        action,
+        entity_id: categoryId.toString(),
+        work_item_id: '', // Categories don't have work items
+        org_id: orgId.toString(),
+        category_id: categoryId.toString(),
+        changedFields,
+        fieldChanges,
+        triggered_by: triggeredBy,
+        timestamp: new Date().toISOString()
+      }
+    };
+  }
+
+  /**
+   * Purpose: Helper to create system_prompt domain event
+   */
+  public static systemPromptEvent(
+    action: 'create' | 'update' | 'delete',
+    promptId: number,
+    orgId: number,
+    triggeredBy: TriggerSource,
+    name: string,
+    eventType: string,
+    conditionCode: string | null,
+    promptTemplate: string,
+    changedFields: string[] = []
+  ): DomainEvent {
+    return {
+      actionType: 'system_prompt',
+      data: {
+        entity: 'system_prompt',
+        action,
+        entity_id: promptId.toString(),
+        work_item_id: '', // System prompts don't have work items
+        org_id: orgId.toString(),
+        category_id: null,
+        changedFields,
+        fieldChanges: {},
+        triggered_by: triggeredBy,
+        timestamp: new Date().toISOString(),
+        // System prompt specific fields
+        name,
+        eventType,
+        conditionCode: conditionCode || undefined,
+        promptTemplate
+      }
     };
   }
 }

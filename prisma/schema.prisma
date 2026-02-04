@@ -177,25 +177,18 @@ model SystemPrompt {
   orgId           Int         @map("org_id")
   
   name            String      @db.VarChar(255)
-  keyName         String      @map("key_name") @db.VarChar(255)
-  description     String?     @db.Text
-  
-  eventType       String      @map("event_type") @db.VarChar(100)
+  eventType       String?     @map("event_type") @db.VarChar(100)
   conditionCode   String?     @map("condition_code") @db.Text
   promptTemplate  String      @map("prompt_template") @db.Text
-  
-  isActive        Boolean     @default(true) @map("is_active")
-  priority        Int         @default(0)
   
   createdBy       Int?        @map("created_by")
   updatedBy       Int?        @map("updated_by")
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at")
 
-  @@unique([orgId, keyName])
+  @@unique([orgId, name])
   @@index([orgId], name: "idx_system_prompts_org")
   @@index([eventType], name: "idx_system_prompts_event_type")
-  @@index([isActive], name: "idx_system_prompts_active")
-  @@index([orgId, eventType, isActive], name: "idx_system_prompts_org_event")
+  @@index([orgId, eventType], name: "idx_system_prompts_org_event")
   @@map("system_prompts")
 }
