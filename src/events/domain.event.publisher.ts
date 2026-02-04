@@ -27,8 +27,9 @@ export async function publishDomainEvent(event: DomainEvent): Promise<void> {
       durable: true
     });
 
-    // Create routing key: entity.action (e.g., work_item.update)
-    const routingKey = `${event.data.entity}.${event.data.action}`;
+    // Create routing key based on actionType (work_item or system_prompt)
+    // This ensures proper queue routing via wildcard bindings
+    const routingKey = event.actionType;
 
     // Serialize event (no BigInt conversion needed)
     const eventPayload = JSON.stringify(event);

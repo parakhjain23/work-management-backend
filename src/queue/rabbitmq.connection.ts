@@ -37,9 +37,13 @@ export async function connectRabbitMQ(): Promise<void> {
       durable: true,
     });
 
-    // Bind queues to exchange (broadcast all events for now)
-    await channel.bindQueue(RAG_QUEUE_NAME, DOMAIN_EVENTS_EXCHANGE, '#');
-    await channel.bindQueue(SYSTEMPROMPT_QUEUE_NAME, DOMAIN_EVENTS_EXCHANGE, '#');
+    // Bind queues to exchange with actionType routing
+    // RAG queue: Only work_item actionType (includes all work_item, category, custom_field events)
+    await channel.bindQueue(RAG_QUEUE_NAME, DOMAIN_EVENTS_EXCHANGE, 'work_item');
+    
+    // SystemPrompt queue: Both work_item and system_prompt actionTypes
+    await channel.bindQueue(SYSTEMPROMPT_QUEUE_NAME, DOMAIN_EVENTS_EXCHANGE, 'work_item');
+    await channel.bindQueue(SYSTEMPROMPT_QUEUE_NAME, DOMAIN_EVENTS_EXCHANGE, 'system_prompt');
 
     console.log(`[RabbitMQ] Connected - Exchange '${DOMAIN_EVENTS_EXCHANGE}' with queues bound`);
 
