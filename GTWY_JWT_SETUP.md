@@ -24,7 +24,7 @@ Add to `.env`:
 GTWY_ACCESS_KEY=your_actual_gtwy_access_key_here
 GTWY_CHATBOT_ID=69785c0b108ba50ee320501b
 JWT_EXPIRY_SECONDS=3600
-APP_ENV=local
+NODE_ENV=local
 ```
 
 ### Variable Descriptions
@@ -32,7 +32,7 @@ APP_ENV=local
 - **GTWY_ACCESS_KEY** - Secret key for signing JWTs (from GTWY dashboard)
 - **GTWY_CHATBOT_ID** - Your chatbot ID from GTWY
 - **JWT_EXPIRY_SECONDS** - Token lifetime in seconds (default: 3600 = 1 hour)
-- **APP_ENV** - Environment identifier (local, staging, prod)
+- **NODE_ENV** - Environment identifier (local, staging, prod)
 
 ## API Endpoint
 

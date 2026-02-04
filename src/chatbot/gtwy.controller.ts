@@ -5,7 +5,7 @@ const GTWY_ACCESS_KEY = process.env.GTWY_ACCESS_KEY || '';
 const GTWY_CHATBOT_ID = '69803b8067da81ed84b2aa69';
 const GTWY_ORG_ID = '59162';
 const JWT_EXPIRY_SECONDS = parseInt(process.env.JWT_EXPIRY_SECONDS || '3600', 10);
-const APP_ENV = process.env.APP_ENV || 'local';
+const NODE_ENV = process.env.NODE_ENV || 'local';
 
 let jwtService: GtwyJwtService | null = null;
 
@@ -48,7 +48,7 @@ export const getEmbedToken = (req: Request, res: Response): void => {
       userId: req.user.id.toString(),
       chatbotId: GTWY_CHATBOT_ID,
       expirySeconds: JWT_EXPIRY_SECONDS,
-      env: APP_ENV,
+      env: NODE_ENV,
       internalOrgId: req.user.org_id.toString()
     });
 

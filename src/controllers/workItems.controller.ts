@@ -1,6 +1,6 @@
+import { WorkItemPriority, WorkItemStatus } from '@prisma/client';
 import { Request, Response } from 'express';
-import { WorkItemsService, WorkItemFilters } from '../services/workItems.service.js';
-import { WorkItemStatus, WorkItemPriority } from '@prisma/client';
+import { WorkItemFilters, WorkItemsService } from '../services/workItems.service.js';
 import { serializeBigInt } from '../utils/bigint.serializer.js';
 
 const workItemsService = new WorkItemsService();
