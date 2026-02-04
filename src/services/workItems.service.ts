@@ -3,6 +3,7 @@ import { WorkItemStatus, WorkItemPriority, LogType } from '@prisma/client';
 import { domainEventDispatcher, DomainEventDispatcher } from '../events/domain.event.dispatcher.js';
 import { WorkItemFullData } from '../types/workItem.types.js';
 import { FieldChange } from '../types/events.types.js';
+import { CustomFieldsService } from './customFields.service.js';
 
 export interface CreateWorkItemDto {
   title: string;
@@ -17,6 +18,7 @@ export interface CreateWorkItemDto {
   rootParentId?: number;
   externalId?: string;
   createdBy?: number;
+  customFieldValues?: Record<string, any>;
 }
 
 export interface UpdateWorkItemDto {
@@ -33,6 +35,7 @@ export interface UpdateWorkItemDto {
   parentId?: number | null;
   rootParentId?: number | null;
   docId?: string | null;
+  customFieldValues?: Record<string, any>;
 }
 
 export interface WorkItemFilters {
@@ -45,6 +48,7 @@ export interface WorkItemFilters {
 
 export class WorkItemsService {
   private prisma = getPrismaClient();
+  private customFieldsService = new CustomFieldsService();
 
   async findAll(orgId: number, filters: WorkItemFilters = {}) {
     const { categoryId, status, priority, limit = 50, offset = 0 } = filters;
@@ -170,6 +174,10 @@ export class WorkItemsService {
         }
       }
     });
+
+    if (data.customFieldValues && Object.keys(data.customFieldValues).length > 0 && data.categoryId) {
+      await this.customFieldsService.updateValues(workItem.id, orgId, data.customFieldValues);
+    }
 
     await this.prisma.workItemLog.create({
       data: {
@@ -423,7 +431,10 @@ export class WorkItemsService {
     // Query 3: Fetch custom field values for this work item
     const customFieldValues = await this.prisma.customFieldValue.findMany({
       where: {
-        workItemId: workItemId
+        workItemId: workItemId,
+        customFieldMetaDataId: {
+          in: customFieldsMetadata.map(m => m.id)
+        }
       },
       include: {
         customFieldMetaData: {

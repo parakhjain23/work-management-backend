@@ -8,9 +8,9 @@ const workItemsService = new WorkItemsService();
 export const getWorkItems = async (req: Request, res: Response): Promise<void> => {
   try {
     const orgId = Number(req.user!.org_id);
-    
+
     const filters: WorkItemFilters = {};
-    
+
     if (req.query.categoryId) {
       filters.categoryId = Number(req.query.categoryId as string);
     }
@@ -93,7 +93,7 @@ export const getWorkItemById = async (req: Request, res: Response): Promise<void
 
 export const createWorkItem = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { categoryId, title, description, status, priority, assigneeId, startDate, dueDate, parentId, rootParentId, externalId } = req.body;
+    const { categoryId, title, description, status, priority, assigneeId, startDate, dueDate, parentId, rootParentId, externalId, customFieldValues } = req.body;
 
     if (!title) {
       res.status(400).json({
@@ -117,7 +117,8 @@ export const createWorkItem = async (req: Request, res: Response): Promise<void>
       dueDate: dueDate ? new Date(dueDate) : undefined,
       parentId: parentId ? Number(parentId) : undefined,
       rootParentId: rootParentId ? Number(rootParentId) : undefined,
-      externalId
+      externalId,
+      customFieldValues
     });
 
     res.status(201).json({
@@ -290,19 +291,16 @@ export const createWorkItemChild = async (req: Request, res: Response): Promise<
  */
 export const getWorkItemFullData = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log('[getWorkItemFullData] Called with params:', req.params);
     const workItemIdParam = req.params.workItemId;
     if (Array.isArray(workItemIdParam)) {
       res.status(400).json({ success: false, error: 'Invalid work item ID' });
       return;
     }
-    
+
     const workItemId = Number(workItemIdParam);
     const orgId = Number(req.user!.org_id);
-    console.log('[getWorkItemFullData] Fetching data for workItemId:', workItemId.toString(), 'orgId:', orgId.toString());
 
     const fullData = await workItemsService.getFullData(workItemId, orgId);
-    console.log('[getWorkItemFullData] Data fetched successfully');
 
     res.json({
       success: true,
