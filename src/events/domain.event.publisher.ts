@@ -29,7 +29,7 @@ export async function publishDomainEvent(event: DomainEvent): Promise<void> {
 
     // Create routing key based on actionType (work_item or system_prompt)
     // This ensures proper queue routing via wildcard bindings
-    const routingKey = event.actionType;
+    const nd = event.actionType;
 
     // Serialize event (no BigInt conversion needed)
     const eventPayload = JSON.stringify(event);

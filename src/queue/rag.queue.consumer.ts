@@ -1,6 +1,7 @@
 import { Channel, ConsumeMessage } from 'amqplib';
 import { getRabbitMQChannel } from './rabbitmq.connection.js';
 import { RagQueueMessage, RAG_QUEUE_NAME } from './queue.types.js';
+import { DomainEvent } from '../types/events.types.js';
 
 /**
  * Purpose: Start consuming messages from RAG queue (transport only, no business logic)
@@ -26,7 +27,28 @@ export async function startRagQueueConsumer(
 
       try {
         const messageContent = msg.content.toString();
-        const message: RagQueueMessage = JSON.parse(messageContent);
+        const parsedMessage = JSON.parse(messageContent);
+
+        let message: RagQueueMessage;
+
+        // Check if it's a DomainEvent (new format) or old flat format
+        if (parsedMessage.actionType && parsedMessage.data) {
+          // New DomainEvent format
+          const domainEvent: DomainEvent = parsedMessage;
+          message = {
+            entity_type: domainEvent.data.entity as any,
+            action: domainEvent.data.action,
+            entity_id: Number(domainEvent.data.entity_id),
+            org_id: Number(domainEvent.data.org_id),
+            changed_fields: domainEvent.data.changedFields,
+            timestamp: domainEvent.data.timestamp
+          };
+        } else if (parsedMessage.entity_type) {
+          // Old flat format (backward compatibility)
+          message = parsedMessage as RagQueueMessage;
+        } else {
+          throw new Error('Unknown message format');
+        }
 
         console.log(`[RAG Queue Consumer] Received message: ${message.entity_type} ${message.action} ${message.entity_id}`);
 

@@ -3,6 +3,7 @@ import app from './app/server.js';
 import { getPrismaClient } from './db/prisma.js';
 import { connectRabbitMQ, closeRabbitMQ } from './queue/rabbitmq.connection.js';
 import { startSystemPromptWorker } from './workers/systemPromptWorker.js';
+import { startRagWorker } from './workers/ragWorker.js';
 
 async function bootstrap() {
   try {
@@ -14,15 +15,18 @@ async function bootstrap() {
     await prisma.$connect();
     console.log('✅ Database connected');
     
-    // Initialize RabbitMQ for RAG event publishing
+    // Initialize RabbitMQ for event publishing and workers
     try {
       await connectRabbitMQ();
-      console.log('✅ RabbitMQ connected (RAG event publisher)');
+      console.log('✅ RabbitMQ connected');
       
       // Start system prompt worker to consume domain events
       await startSystemPromptWorker();
+      
+      // Start RAG worker to consume indexing jobs
+      await startRagWorker();
     } catch (error) {
-      console.warn('⚠️  RabbitMQ connection failed - RAG events will not be queued:', error);
+      console.warn('⚠️  RabbitMQ connection failed - workers will not start:', error);
     }
     
     const server = app.listen(config.server.port, () => {
