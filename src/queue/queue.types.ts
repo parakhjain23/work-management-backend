@@ -5,6 +5,7 @@ export type RagQueueMessage = {
   org_id: number;
   changed_fields?: string[];
   timestamp: string;
+  doc_id?: string | null;
 };
 
 // Exchange and Queue Names

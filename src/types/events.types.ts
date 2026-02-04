@@ -13,15 +13,16 @@ export interface EventData {
   work_item_id: string;
   org_id: string;
   category_id: string | null;
-  
+  doc_id?: string | null;
+
   // Change tracking
   changedFields: string[];
   fieldChanges: Record<string, FieldChange>;
-  
+
   // Metadata
   triggered_by: 'user' | 'system';
   timestamp: string;
-  
+
   // Optional system prompt fields (only present for system_prompt events)
   name?: string;
   eventType?: string;

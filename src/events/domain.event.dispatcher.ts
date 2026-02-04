@@ -69,12 +69,12 @@ export class DomainEventDispatcher {
     if (!event.data.entity) throw new Error('Event must have entity field');
     if (!event.data.action) throw new Error('Event must have action field');
     if (!event.data.entity_id) throw new Error('Event must have entity_id field');
-    
+
     // work_item_id is optional for category and system_prompt events
     if (event.data.entity !== 'category' && event.data.entity !== 'system_prompt' && !event.data.work_item_id) {
       throw new Error('Event must have work_item_id field');
     }
-    
+
     if (!event.data.org_id) throw new Error('Event must have org_id field');
     if (!event.data.triggered_by) throw new Error('Event must have triggered_by field');
     if (!event.data.timestamp) throw new Error('Event must have timestamp field');
@@ -112,7 +112,8 @@ export class DomainEventDispatcher {
     categoryId: number | null,
     triggeredBy: TriggerSource,
     changedFields: string[] = [],
-    fieldChanges: Record<string, FieldChange> = {}
+    fieldChanges: Record<string, FieldChange> = {},
+    docId?: string | null
   ): DomainEvent {
     return {
       actionType: 'work_item',
@@ -126,7 +127,8 @@ export class DomainEventDispatcher {
         changedFields,
         fieldChanges,
         triggered_by: triggeredBy,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        doc_id: docId
       }
     };
   }

@@ -346,7 +346,8 @@ export class WorkItemsService {
         workItem.categoryId,
         'user',
         ['title', 'status', 'deleted'],
-        fieldChanges
+        fieldChanges,
+        workItem.docId
       )
     );
   }

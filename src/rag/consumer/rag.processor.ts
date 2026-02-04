@@ -49,7 +49,7 @@ export class RagProcessor {
     } else if (message.action === 'update') {
       await this.processWorkItemUpdate(message.entity_id, message.org_id);
     } else if (message.action === 'delete') {
-      await this.processWorkItemDelete(message.entity_id);
+      await this.processWorkItemDelete(message.doc_id);
     }
   }
 
@@ -92,8 +92,6 @@ export class RagProcessor {
         where: { id: workItemId },
         data: { docId: docId }
       });
-
-      console.log(`[RAG Processor] Indexed work item ${workItemId} with docId: ${docId}`);
     } catch (error) {
       console.error(`[RAG Processor] Failed to create work item ${workItemId}:`, error);
       // Don't throw - allow worker to continue processing other events
@@ -129,8 +127,7 @@ export class RagProcessor {
       }
 
       // Check if docId is from legacy Hippocampus system
-      if (existingDocId && this.client.isLegacyDocId(existingDocId)) {
-        console.log(`[RAG Processor] Legacy docId detected: ${existingDocId}, recreating in GTWY`);
+      if (!existingDocId) {
         // Create new resource in GTWY
         const newDocId = await this.client.createResource({
           title: document.title,
@@ -145,7 +142,6 @@ export class RagProcessor {
           data: { docId: newDocId }
         });
 
-        console.log(`[RAG Processor] Migrated work item ${workItemId} from legacy to GTWY docId: ${newDocId}`);
         return;
       }
 
@@ -156,7 +152,6 @@ export class RagProcessor {
           description: document.description,
           content: document.content
         });
-        console.log(`[RAG Processor] Updated work item ${workItemId} with docId: ${existingDocId}`);
       } else {
         // No docId exists, create new resource
         const docId = await this.client.createResource({
@@ -171,8 +166,6 @@ export class RagProcessor {
           where: { id: workItemId },
           data: { docId: docId }
         });
-
-        console.log(`[RAG Processor] Created resource for work item ${workItemId} with docId: ${docId}`);
       }
     } catch (error) {
       console.error(`[RAG Processor] Failed to update work item ${workItemId}:`, error);
@@ -184,36 +177,14 @@ export class RagProcessor {
    * Purpose: Remove work item from RAG
    * Deletes resource from GTWY and clears docId from database
    */
-  private async processWorkItemDelete(workItemId: number): Promise<void> {
-    const prisma = getPrismaClient();
-
+  private async processWorkItemDelete(docId: string | null | undefined): Promise<void> {
     try {
-      // Get docId before deletion
-      const workItem = await prisma.workItem.findUnique({
-        where: { id: workItemId },
-        select: { docId: true }
-      });
 
-      if (workItem?.docId) {
-        const docId = workItem.docId;
-
-        // Skip deletion if legacy docId
-        if (!this.client.isLegacyDocId(docId)) {
-          // Delete from GTWY
-          await this.client.deleteResource(docId);
-          console.log(`[RAG Processor] Deleted resource with docId: ${docId}`);
-        }
-
-        // Clear docId from database
-        await prisma.workItem.update({
-          where: { id: workItemId },
-          data: { docId: null }
-        });
+      if (docId) {
+        await this.client.deleteResource(docId);
       }
-
-      console.log(`[RAG Processor] Deleted work item ${workItemId}`);
     } catch (error) {
-      console.error(`[RAG Processor] Failed to delete work item ${workItemId}:`, error);
+      console.error(`[RAG Processor] Failed to delete work item with doc_id: ${docId}`, error);
       // Don't throw - deletion failures should not crash worker
     }
   }

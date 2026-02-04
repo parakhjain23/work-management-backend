@@ -78,7 +78,7 @@ export class GtwyRagClient {
           method,
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': this.authToken
+            'pauthkey': this.authToken
           },
           body: body ? JSON.stringify(body) : undefined
         });
@@ -117,16 +117,17 @@ export class GtwyRagClient {
             chunkSize: 4000
           },
           collection_details: this.collectionMode,
-          owner_id: params.ownerId
+          // owner_id: params.ownerId
+          owner_id: "59162"
         }
       );
 
-      if (!response.success || !response.doc_id) {
+      if (!response.success || !response.data?._id) {
         throw new Error('Invalid response from GTWY RAG API');
       }
 
-      console.log(`[GTWY RAG] Created resource: ${response.doc_id} for owner: ${params.ownerId}`);
-      return response.doc_id;
+      console.log(`[GTWY RAG] Created resource: ${response.data._id} for owner: ${params.ownerId}`);
+      return response.data._id;
     } catch (error) {
       console.error('[GTWY RAG] Failed to create resource:', error);
       throw error;
@@ -189,7 +190,8 @@ export class GtwyRagClient {
         'POST',
         {
           collection_id: this.collectionId,
-          owner_id: params.ownerId,
+          // owner_id: params.ownerId,
+          owner_id: "59162",
           query: params.query
         }
       );
@@ -213,15 +215,5 @@ export class GtwyRagClient {
       console.error('[GTWY RAG] Query failed:', error);
       throw error;
     }
-  }
-
-  /**
-   * Purpose: Check if a docId is from old Hippocampus system
-   * Old format: workItem:123
-   * New format: GTWY doc_id (UUID or similar)
-   */
-  public isLegacyDocId(docId: string | null): boolean {
-    if (!docId) return false;
-    return docId.startsWith('workItem:');
   }
 }

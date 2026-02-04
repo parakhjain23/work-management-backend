@@ -46,14 +46,14 @@ export async function publishDomainEvent(event: DomainEvent): Promise<void> {
       }
     );
 
-    console.log(`[Domain Event Publisher] Published: ${routingKey}`, {
+    console.log(`Published Data in Exchange: ${routingKey}`, {
       actionType: event.actionType,
       entity_id: event.data.entity_id,
       work_item_id: event.data.work_item_id,
       changedFields: event.data.changedFields
     });
   } catch (error) {
-    console.error('[Domain Event Publisher] Failed to publish event:', error);
+    console.error('Failed to publish event in exchange:', error);
     // Don't throw - publishing failure should not break the API
   }
 }
