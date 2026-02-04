@@ -6,7 +6,7 @@ import { Request, Response } from 'express';
  */
 export const getConditionGeneratorData = async (_req: Request, res: Response): Promise<void> => {
   const exampleData = {
-    entity: "custom_field_value",
+    entity: "work_item",
     action: "update",
     work_item_id: "8",
     org_id: "1",

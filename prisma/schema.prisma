@@ -180,7 +180,7 @@ model SystemPrompt {
   keyName         String      @map("key_name") @db.VarChar(255)
   description     String?     @db.Text
   
-  eventTypes      String[]    @map("event_types")
+  eventType       String      @map("event_type") @db.VarChar(100)
   conditionCode   String?     @map("condition_code") @db.Text
   promptTemplate  String      @map("prompt_template") @db.Text
   
@@ -194,7 +194,8 @@ model SystemPrompt {
 
   @@unique([orgId, keyName])
   @@index([orgId], name: "idx_system_prompts_org")
+  @@index([eventType], name: "idx_system_prompts_event_type")
   @@index([isActive], name: "idx_system_prompts_active")
-  @@index([orgId, isActive], name: "idx_system_prompts_org_active")
+  @@index([orgId, eventType, isActive], name: "idx_system_prompts_org_event")
   @@map("system_prompts")
 }

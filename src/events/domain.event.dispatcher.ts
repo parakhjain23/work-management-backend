@@ -125,6 +125,7 @@ export class DomainEventDispatcher {
 
   /**
    * Purpose: Helper to create custom_field_value domain event
+   * Note: Custom field changes emit work_item.update events since they belong to work items
    */
   public static customFieldValueEvent(
     action: 'create' | 'update' | 'delete',
@@ -137,9 +138,9 @@ export class DomainEventDispatcher {
     fieldChanges: Record<string, FieldChange> = {}
   ): DomainEvent {
     return {
-      entity: 'custom_field_value',
+      entity: 'work_item',
       action,
-      entity_id: valueId.toString(),
+      entity_id: workItemId.toString(),
       work_item_id: workItemId.toString(),
       org_id: orgId.toString(),
       category_id: categoryId?.toString() || '',

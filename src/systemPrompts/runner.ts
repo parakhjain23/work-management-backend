@@ -16,6 +16,8 @@ export class SystemPromptRunner {
       changed_fields: event.changed_fields
     });
 
+    
+
     // Future implementation:
     // 1. Query system_prompts table for matching rules
     // 2. Filter by entity_type, action, field_name

@@ -9,7 +9,7 @@ export interface CreateSystemPromptDto {
   name: string;
   keyName: string;
   description?: string;
-  eventTypes: string[];
+  eventType: string;
   conditionCode?: string;
   promptTemplate: string;
   isActive?: boolean;
@@ -19,7 +19,7 @@ export interface CreateSystemPromptDto {
 export interface UpdateSystemPromptDto {
   name?: string;
   description?: string;
-  eventTypes?: string[];
+  eventType?: string;
   conditionCode?: string;
   promptTemplate?: string;
   isActive?: boolean;
@@ -43,16 +43,13 @@ export class SystemPromptsService {
   }
 
   /**
-   * Purpose: Find active prompts that match the given event type
-   * Checks if eventType is in the prompt's eventTypes array
+   * Purpose: Find active prompts by event type
    */
   async findActiveByEventType(orgId: number, eventType: string) {
     return await this.prisma.systemPrompt.findMany({
       where: {
         orgId,
-        eventTypes: {
-          has: eventType
-        },
+        eventType,
         isActive: true
       },
       orderBy: {
@@ -94,7 +91,7 @@ export class SystemPromptsService {
         name: data.name,
         keyName: data.keyName,
         description: data.description,
-        eventTypes: data.eventTypes,
+        eventType: data.eventType,
         conditionCode: data.conditionCode,
         promptTemplate: data.promptTemplate,
         isActive: data.isActive ?? true,
