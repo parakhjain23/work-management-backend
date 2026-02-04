@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { RagClient } from './core/rag.client.js';
+import { GtwyRagClient } from './core/rag.client.gtwy.js';
 import { getPrismaClient } from '../db/prisma.js';
 
-const ragClient = new RagClient();
+const ragClient = new GtwyRagClient();
 
 export const ragSearch = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -24,8 +24,20 @@ export const ragSearch = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const collectionId = await getCollectionId(req.user.org_id.toString());
-    if (!collectionId) {
+    const searchLimit = typeof limit === 'number' ? limit : 5;
+    const ownerId = req.user.org_id.toString();
+
+    // Query GTWY RAG API
+    const results = await ragClient.query({
+      query,
+      ownerId,
+      limit: searchLimit
+    });
+
+    // Extract doc_ids from results
+    const docIds = results.map(r => r.docId);
+
+    if (docIds.length === 0) {
       res.json({
         success: true,
         work_item_ids: []
@@ -33,24 +45,18 @@ export const ragSearch = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const searchLimit = typeof limit === 'number' ? limit : 5;
-    const searchMinScore = typeof minScore === 'number' ? minScore : 0.75;
-    const ownerId = `org:${req.user.org_id.toString()}`;
+    // Query database to get work items by docId
+    const prisma = getPrismaClient();
+    const workItems = await prisma.workItem.findMany({
+      where: {
+        docId: { in: docIds },
+        orgId: req.user.org_id
+      },
+      select: { id: true },
+      orderBy: { id: 'desc' }
+    });
 
-    const results = await ragClient.query(
-      collectionId,
-      query,
-      ownerId,
-      searchLimit,
-      searchMinScore
-    );
-
-    const workItemIds = results
-      .map(r => {
-        const match = r.resourceId.match(/^workItem:(\d+)$/);
-        return match ? parseInt(match[1], 10) : null;
-      })
-      .filter((id): id is number => id !== null);
+    const workItemIds = workItems.map(item => Number(item.id));
 
     res.json({
       success: true,
@@ -66,11 +72,3 @@ export const ragSearch = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-async function getCollectionId(orgId: string): Promise<string | null> {
-  try {
-    return await ragClient.createCollection(orgId);
-  } catch (error) {
-    console.error('Failed to get collection ID:', error);
-    return null;
-  }
-}

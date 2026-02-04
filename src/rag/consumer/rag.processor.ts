@@ -1,6 +1,6 @@
 import { RagQueueMessage } from '../../queue/queue.types.js';
-import { RagClient } from '../core/rag.client.js';
-import { RagDocumentBuilder } from '../core/rag.document.builder.js';
+import { GtwyRagClient } from '../core/rag.client.gtwy.js';
+import { GtwyRagDocumentBuilder } from '../core/rag.document.builder.gtwy.js';
 import { getPrismaClient } from '../../db/prisma.js';
 
 /**
@@ -8,12 +8,12 @@ import { getPrismaClient } from '../../db/prisma.js';
  * Re-fetches latest DB state and performs RAG operations
  */
 export class RagProcessor {
-  private client: RagClient;
-  private builder: RagDocumentBuilder;
+  private client: GtwyRagClient;
+  private builder: GtwyRagDocumentBuilder;
 
   constructor() {
-    this.client = new RagClient();
-    this.builder = new RagDocumentBuilder();
+    this.client = new GtwyRagClient();
+    this.builder = new GtwyRagDocumentBuilder();
   }
 
   /**
@@ -55,54 +55,167 @@ export class RagProcessor {
 
   /**
    * Purpose: Index new work item in RAG
+   * Checks if docId already exists (idempotency), creates resource, and saves docId
    */
   private async processWorkItemCreate(workItemId: number, orgId: number): Promise<void> {
-    const collectionId = await this.client.createCollection(orgId.toString());
+    const prisma = getPrismaClient();
 
-    const document = await this.builder.buildDocument(Number(workItemId));
-    if (!document) {
-      console.warn(`[RAG Processor] Cannot build document for work item ${workItemId}`);
-      return;
+    try {
+      // Check if docId already exists (idempotency safety)
+      const existingWorkItem = await prisma.workItem.findUnique({
+        where: { id: workItemId },
+        select: { docId: true }
+      });
+
+      if (existingWorkItem?.docId) {
+        console.log(`[RAG Processor] Work item ${workItemId} already has docId: ${existingWorkItem.docId}, skipping creation`);
+        return;
+      }
+
+      // Build document
+      const document = await this.builder.buildDocument(Number(workItemId), orgId);
+      if (!document) {
+        console.warn(`[RAG Processor] Cannot build document for work item ${workItemId}`);
+        return;
+      }
+
+      // Create resource in GTWY
+      const docId = await this.client.createResource({
+        title: document.title,
+        description: document.description,
+        content: document.content,
+        ownerId: orgId.toString()
+      });
+
+      // Save docId to database
+      await prisma.workItem.update({
+        where: { id: workItemId },
+        data: { docId: docId }
+      });
+
+      console.log(`[RAG Processor] Indexed work item ${workItemId} with docId: ${docId}`);
+    } catch (error) {
+      console.error(`[RAG Processor] Failed to create work item ${workItemId}:`, error);
+      // Don't throw - allow worker to continue processing other events
     }
-
-    const resourceId = `workItem:${workItemId}`;
-    const ownerId = `org:${orgId}`;
-    
-    await this.client.addResource(collectionId, resourceId, document.title, document.content, ownerId);
-    console.log(`[RAG Processor] Indexed work item ${workItemId}`);
   }
 
   /**
    * Purpose: Update existing work item in RAG
+   * If docId exists, updates resource; otherwise creates new resource
    */
   private async processWorkItemUpdate(workItemId: number, orgId: number): Promise<void> {
-    const document = await this.builder.buildDocument(Number(workItemId));
-    if (!document) {
-      console.warn(`[RAG Processor] Cannot build document for work item ${workItemId}`);
-      return;
-    }
+    const prisma = getPrismaClient();
 
-    const resourceId = `workItem:${workItemId}`;
-    
     try {
-      await this.client.updateResource(resourceId, document.title, document.content);
-      console.log(`[RAG Processor] Updated work item ${workItemId}`);
+      // Get existing docId
+      const workItem = await prisma.workItem.findUnique({
+        where: { id: workItemId },
+        select: { docId: true }
+      });
+
+      if (!workItem) {
+        console.warn(`[RAG Processor] Work item ${workItemId} not found`);
+        return;
+      }
+
+      const existingDocId = workItem.docId;
+
+      // Build document
+      const document = await this.builder.buildDocument(Number(workItemId), orgId);
+      if (!document) {
+        console.warn(`[RAG Processor] Cannot build document for work item ${workItemId}`);
+        return;
+      }
+
+      // Check if docId is from legacy Hippocampus system
+      if (existingDocId && this.client.isLegacyDocId(existingDocId)) {
+        console.log(`[RAG Processor] Legacy docId detected: ${existingDocId}, recreating in GTWY`);
+        // Create new resource in GTWY
+        const newDocId = await this.client.createResource({
+          title: document.title,
+          description: document.description,
+          content: document.content,
+          ownerId: orgId.toString()
+        });
+
+        // Update docId in database
+        await prisma.workItem.update({
+          where: { id: workItemId },
+          data: { docId: newDocId }
+        });
+
+        console.log(`[RAG Processor] Migrated work item ${workItemId} from legacy to GTWY docId: ${newDocId}`);
+        return;
+      }
+
+      // If docId exists, update resource
+      if (existingDocId) {
+        await this.client.updateResource(existingDocId, {
+          title: document.title,
+          description: document.description,
+          content: document.content
+        });
+        console.log(`[RAG Processor] Updated work item ${workItemId} with docId: ${existingDocId}`);
+      } else {
+        // No docId exists, create new resource
+        const docId = await this.client.createResource({
+          title: document.title,
+          description: document.description,
+          content: document.content,
+          ownerId: orgId.toString()
+        });
+
+        // Save docId to database
+        await prisma.workItem.update({
+          where: { id: workItemId },
+          data: { docId: docId }
+        });
+
+        console.log(`[RAG Processor] Created resource for work item ${workItemId} with docId: ${docId}`);
+      }
     } catch (error) {
-      console.log(`[RAG Processor] Resource not found, adding instead`);
-      const collectionId = await this.client.createCollection(orgId.toString());
-      const ownerId = `org:${orgId}`;
-      await this.client.addResource(collectionId, resourceId, document.title, document.content, ownerId);
-      console.log(`[RAG Processor] Indexed work item ${workItemId}`);
+      console.error(`[RAG Processor] Failed to update work item ${workItemId}:`, error);
+      // Don't throw - allow worker to continue processing other events
     }
   }
 
   /**
    * Purpose: Remove work item from RAG
+   * Deletes resource from GTWY and clears docId from database
    */
   private async processWorkItemDelete(workItemId: number): Promise<void> {
-    const resourceId = `workItem:${workItemId}`;
-    await this.client.deleteResource(resourceId);
-    console.log(`[RAG Processor] Deleted work item ${workItemId}`);
+    const prisma = getPrismaClient();
+
+    try {
+      // Get docId before deletion
+      const workItem = await prisma.workItem.findUnique({
+        where: { id: workItemId },
+        select: { docId: true }
+      });
+
+      if (workItem?.docId) {
+        const docId = workItem.docId;
+
+        // Skip deletion if legacy docId
+        if (!this.client.isLegacyDocId(docId)) {
+          // Delete from GTWY
+          await this.client.deleteResource(docId);
+          console.log(`[RAG Processor] Deleted resource with docId: ${docId}`);
+        }
+
+        // Clear docId from database
+        await prisma.workItem.update({
+          where: { id: workItemId },
+          data: { docId: null }
+        });
+      }
+
+      console.log(`[RAG Processor] Deleted work item ${workItemId}`);
+    } catch (error) {
+      console.error(`[RAG Processor] Failed to delete work item ${workItemId}:`, error);
+      // Don't throw - deletion failures should not crash worker
+    }
   }
 
   /**
@@ -119,9 +232,10 @@ export class RagProcessor {
     const prisma = getPrismaClient();
 
     // Get all work items in this category
-    const workItems = await prisma.$queryRawUnsafe<any[]>(`
-      SELECT id FROM work_items WHERE category_id = ${message.entity_id}
-    `);
+    const workItems = await prisma.workItem.findMany({
+      where: { categoryId: message.entity_id },
+      select: { id: true }
+    });
 
     console.log(`[RAG Processor] Updating ${workItems.length} work items in category ${message.entity_id}`);
 
@@ -140,17 +254,17 @@ export class RagProcessor {
     const prisma = getPrismaClient();
 
     // Get all work items using this custom field
-    const workItems = await prisma.$queryRawUnsafe<any[]>(`
-      SELECT DISTINCT work_item_id as id
-      FROM custom_field_values
-      WHERE custom_field_meta_data_id = ${message.entity_id}
-    `);
+    const workItems = await prisma.customFieldValue.findMany({
+      where: { customFieldMetaDataId: message.entity_id },
+      select: { workItemId: true },
+      distinct: ['workItemId']
+    });
 
     console.log(`[RAG Processor] Updating ${workItems.length} work items with custom field ${message.entity_id}`);
 
     // Update each work item in RAG
     for (const item of workItems) {
-      await this.processWorkItemUpdate(Number(item.id), message.org_id);
+      await this.processWorkItemUpdate(Number(item.workItemId), message.org_id);
     }
 
     console.log(`[RAG Processor] Completed custom field meta update for ${workItems.length} work items`);
