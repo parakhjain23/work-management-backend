@@ -46,6 +46,12 @@ export interface WorkItemFilters {
   offset?: number;
 }
 
+export interface SearchWorkItemsParams {
+  query: string;
+  limit?: number;
+  offset?: number;
+}
+
 export class WorkItemsService {
   private prisma = getPrismaClient();
   private customFieldsService = new CustomFieldsService();
@@ -499,5 +505,60 @@ export class WorkItemsService {
       })),
       customFields
     };
+  }
+
+  /**
+   * Purpose: Search work items by query matching title or description
+   * Returns work items where title or description contains any of the search words
+   * Example: "find bugs" will match items with "bug" OR "find" in title/description
+   */
+  async search(orgId: number, params: SearchWorkItemsParams) {
+    const { query, limit = 20, offset = 0 } = params;
+
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    // Split query into individual words and filter out empty strings
+    const words = query.trim().split(/\s+/).filter(word => word.length > 0);
+
+    // Create OR conditions for each word in both title and description
+    const wordConditions = words.flatMap(word => [
+      {
+        title: {
+          contains: word,
+          mode: 'insensitive' as const
+        }
+      },
+      {
+        description: {
+          contains: word,
+          mode: 'insensitive' as const
+        }
+      }
+    ]);
+
+    const workItems = await this.prisma.workItem.findMany({
+      where: {
+        orgId,
+        OR: wordConditions
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            keyName: true
+          }
+        }
+      },
+      orderBy: {
+        updatedAt: 'desc'
+      },
+      take: limit,
+      skip: offset
+    });
+
+    return workItems;
   }
 }

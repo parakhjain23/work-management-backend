@@ -13,6 +13,7 @@ import chatbotRoutes from '../routes/chatbot.routes.js';
 import healthRoutes from '../routes/health.route.js';
 import ragRoutes from '../routes/rag.route.js';
 import conditionGeneratorRoutes from '../routes/conditionGenerator.routes.js';
+import searchRoutes from '../routes/search.routes.js';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/ai/sql', aiSqlRoutes);
 app.use('/', intentRoutes);
 app.use('/chatbot', chatbotRoutes);
 app.use('/rag', ragRoutes);
+app.use('/search', searchRoutes);
 app.use('/categories', categoriesRoutes);
 app.use('/work-items', workItemsRoutes);
 app.use('/custom-fields', customFieldsRoutes);
