@@ -8,13 +8,14 @@ import { getPrismaClient } from '../db/prisma.js';
 export interface CreateSystemPromptDto {
   name: string;
   eventType?: string;
-  conditionCode?: string;
+  conditionLabel?: string;
   promptTemplate: string;
 }
 
 export interface UpdateSystemPromptDto {
   name?: string;
   eventType?: string;
+  conditionLabel?: string;
   conditionCode?: string;
   promptTemplate?: string;
 }
@@ -81,7 +82,8 @@ export class SystemPromptsService {
         orgId,
         name: data.name,
         eventType: data.eventType || null,
-        conditionCode: data.conditionCode || null,
+        conditionLabel: data.conditionLabel || null,
+        conditionCode: null,
         promptTemplate: data.promptTemplate,
         createdBy: userId,
         updatedBy: userId
