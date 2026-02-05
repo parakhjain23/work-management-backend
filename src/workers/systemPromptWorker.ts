@@ -101,6 +101,13 @@ export class SystemPromptWorker {
   private async handleWorkItemEvent(event: DomainEvent): Promise<void> {
     try {
       const eventData = event.data;
+
+      // TODO: AI call for work_item.create - Special processing before condition evaluation
+      if (eventData.entity === 'work_item' && eventData.action === 'create') {
+        // AI call to process work item creation (implementation pending)
+        console.log('[System Prompt Worker] 🤖 TODO: AI call for work_item.create');
+      }
+
       const matchedPrompts = await this.matcher.matchEvent(eventData);
 
       if (matchedPrompts.length === 0) {
@@ -135,37 +142,49 @@ export class SystemPromptWorker {
   }
 
   /**
-   * Purpose: Handle system_prompt events - AI generates/validates condition code
+   * Purpose: Handle system_prompt events - AI generates condition code and refines prompt
    */
   private async handleSystemPromptEvent(event: DomainEvent): Promise<void> {
     try {
-      const { action, entity_id, org_id, name, eventType, promptTemplate } = event.data;
+      const { action, entity_id, org_id } = event.data;
+     
+
 
       if (action !== 'create' && action !== 'update') {
         console.log(`[System Prompt Worker] ⏭️ Skipping ${action} action for system_prompt`);
         return;
       }
 
-      console.log(`[System Prompt Worker] 🤖 Processing system_prompt ${action}: "${name}"`);
-      console.log(`[System Prompt Worker] 🎯 Event Type: ${eventType}`);
+       
+      const systemPromptPayload = await this.systemPromptsService.findById(Number(entity_id), Number(org_id));
 
-      // TODO: Call AI to generate complete system prompt payload
-      // const aiPayload = await this.aiGenerateSystemPrompt({
-      //   name: name!,
-      //   eventType: eventType!,
-      //   promptTemplate: promptTemplate!
-      // });
+      if(!systemPromptPayload){
+        throw new Error("System prompt doesn't exists")
+      }
+
+      console.log(`[System Prompt Worker] 🤖 Processing system_prompt ${action}`);
+
+      // TODO: Call AI to generate conditionCode and refined promptTemplate
       
-      // TODO: Update system prompt with AI-generated conditionCode
-      // await this.systemPromptsService.update(
-      //   Number(entity_id),
-      //   Number(org_id),
-      //   1, // system user
-      //   { conditionCode: aiPayload.conditionCode }
-      // );
+      // const aiResponse = await systemPromptConditionGeneratorAI(systemPromptPayload);
 
-      console.log('[System Prompt Worker] ⚠️ AI condition generation not yet implemented');
-      console.log('[System Prompt Worker] 💡 Will generate condition based on prompt template');
+      // Placeholder AI response for now
+      const aiResponse: any = null;
+
+      if (aiResponse) {
+        // Update system prompt with AI-generated values
+        // The AI response keys match DB column names (conditionCode, promptTemplate, etc.)
+        await this.systemPromptsService.update(
+          Number(entity_id),
+          Number(org_id),
+          1, // system user
+          aiResponse // Contains: conditionCode, promptTemplate, and optionally conditionLabel
+        );
+
+        console.log("udpated system prompt")
+      } else {
+        console.log('[System Prompt Worker] ⚠️ AI call not yet implemented - skipping update');
+      }
     } catch (error: any) {
       console.error('[System Prompt Worker] Error handling system_prompt event:', error.message);
     }

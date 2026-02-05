@@ -178,6 +178,7 @@ model SystemPrompt {
   
   name            String      @db.VarChar(255)
   eventType       String?     @map("event_type") @db.VarChar(100)
+  conditionLabel  String?     @map("condition_label") @db.Text
   conditionCode   String?     @map("condition_code") @db.Text
   promptTemplate  String      @map("prompt_template") @db.Text
   
