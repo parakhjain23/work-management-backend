@@ -9,6 +9,6 @@ export type RagQueueMessage = {
 };
 
 // Exchange and Queue Names
-export const DOMAIN_EVENTS_EXCHANGE = 'domain.events';
-export const RAG_QUEUE_NAME = 'rag.index.queue';
-export const SYSTEMPROMPT_QUEUE_NAME = 'systemprompt.execute.queue';
+export const EVENTS_EXCHANGE = process.env.EVENTS_EXCHANGE || 'domain.events';
+export const RAG_QUEUE = process.env.RAG_QUEUE || 'rag.index.queue';
+export const SYSTEMPROMPT_QUEUE = process.env.SYSTEMPROMPT_QUEUE || 'systemprompt.execute.queue';

@@ -1,5 +1,5 @@
 import amqp, { Channel, Connection } from 'amqplib';
-import { DOMAIN_EVENTS_EXCHANGE, RAG_QUEUE_NAME, SYSTEMPROMPT_QUEUE_NAME } from './queue.types.js';
+import { EVENTS_EXCHANGE, RAG_QUEUE, SYSTEMPROMPT_QUEUE } from './queue.types.js';
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
 
@@ -18,34 +18,34 @@ export async function connectRabbitMQ(): Promise<void> {
     }
 
     console.log(`[RabbitMQ] Connecting to ${RABBITMQ_URL}...`);
-    
+
     connection = await amqp.connect(RABBITMQ_URL);
     channel = await connection.createChannel();
 
     // Assert exchange (topic type for future routing flexibility)
-    await channel.assertExchange(DOMAIN_EVENTS_EXCHANGE, 'topic', {
+    await channel.assertExchange(EVENTS_EXCHANGE, 'topic', {
       durable: true,
     });
 
     // Assert RAG queue
-    await channel.assertQueue(RAG_QUEUE_NAME, {
+    await channel.assertQueue(RAG_QUEUE, {
       durable: true,
     });
 
     // Assert System Prompt queue
-    await channel.assertQueue(SYSTEMPROMPT_QUEUE_NAME, {
+    await channel.assertQueue(SYSTEMPROMPT_QUEUE, {
       durable: true,
     });
 
     // Bind queues to exchange with actionType routing
     // RAG queue: Only work_item actionType (includes all work_item, category, custom_field events)
-    await channel.bindQueue(RAG_QUEUE_NAME, DOMAIN_EVENTS_EXCHANGE, 'work_item');
-    
-    // SystemPrompt queue: Both work_item and system_prompt actionTypes
-    await channel.bindQueue(SYSTEMPROMPT_QUEUE_NAME, DOMAIN_EVENTS_EXCHANGE, 'work_item');
-    await channel.bindQueue(SYSTEMPROMPT_QUEUE_NAME, DOMAIN_EVENTS_EXCHANGE, 'system_prompt');
+    await channel.bindQueue(RAG_QUEUE, EVENTS_EXCHANGE, 'work_item');
 
-    console.log(`[RabbitMQ] Connected - Exchange '${DOMAIN_EVENTS_EXCHANGE}' with queues bound`);
+    // SystemPrompt queue: Both work_item and system_prompt actionTypes
+    await channel.bindQueue(SYSTEMPROMPT_QUEUE, EVENTS_EXCHANGE, 'work_item');
+    await channel.bindQueue(SYSTEMPROMPT_QUEUE, EVENTS_EXCHANGE, 'system_prompt');
+
+    console.log(`[RabbitMQ] Connected - Exchange '${EVENTS_EXCHANGE}' with queues bound`);
 
     // Handle connection errors
     connection.on('error', (err: Error) => {

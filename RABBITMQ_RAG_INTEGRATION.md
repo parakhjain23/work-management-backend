@@ -116,7 +116,7 @@ type RagQueueMessage = {
 
 #### `queue.types.ts`
 - Defines `RagQueueMessage` type
-- Defines `RAG_QUEUE_NAME` constant
+- Defines `RAG_QUEUE` constant
 
 ---
 

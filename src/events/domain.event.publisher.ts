@@ -2,9 +2,9 @@
  * Purpose: Publish domain events to RabbitMQ for system prompt processing
  */
 
-import { DomainEvent } from '../types/events.types.js';
+import { EVENTS_EXCHANGE } from '../queue/queue.types.js';
 import { getRabbitMQChannel } from '../queue/rabbitmq.connection.js';
-import { DOMAIN_EVENTS_EXCHANGE } from '../queue/queue.types.js';
+import { DomainEvent } from '../types/events.types.js';
 
 const EXCHANGE_TYPE = 'topic';
 
@@ -23,7 +23,7 @@ export async function publishDomainEvent(event: DomainEvent): Promise<void> {
     }
 
     // Ensure exchange exists
-    await channel.assertExchange(DOMAIN_EVENTS_EXCHANGE, EXCHANGE_TYPE, {
+    await channel.assertExchange(EVENTS_EXCHANGE, EXCHANGE_TYPE, {
       durable: true
     });
 
@@ -36,7 +36,7 @@ export async function publishDomainEvent(event: DomainEvent): Promise<void> {
 
     // Publish to exchange
     channel.publish(
-      DOMAIN_EVENTS_EXCHANGE,
+      EVENTS_EXCHANGE,
       routingKey,
       Buffer.from(eventPayload),
       {

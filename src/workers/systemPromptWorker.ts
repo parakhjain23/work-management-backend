@@ -3,13 +3,15 @@
  * Processes events through matcher → evaluator pipeline
  */
 
+import { getPrismaClient } from '../db/prisma.js';
+import { GtwyServiceBuilder } from '../gtwy/gtwy.jwt.js';
+import { SYSTEMPROMPT_QUEUE } from '../queue/queue.types.js';
 import { getRabbitMQChannel } from '../queue/rabbitmq.connection.js';
-import { DomainEvent, EventData } from '../types/events.types.js';
-import { SystemPromptMatcher } from '../services/systemPromptMatcher.service.js';
 import { ConditionEvaluator } from '../services/conditionEvaluator.service.js';
-import { WorkItemsService } from '../services/workItems.service.js';
+import { SystemPromptMatcher } from '../services/systemPromptMatcher.service.js';
 import { SystemPromptsService } from '../services/systemPrompts.service.js';
-import { DOMAIN_EVENTS_EXCHANGE, SYSTEMPROMPT_QUEUE_NAME } from '../queue/queue.types.js';
+import { WorkItemsService } from '../services/workItems.service.js';
+import { DomainEvent, EventData } from '../types/events.types.js';
 
 export class SystemPromptWorker {
   private matcher = new SystemPromptMatcher();
@@ -32,12 +34,12 @@ export class SystemPromptWorker {
       // Queue already created and bound in rabbitmq.connection.ts
       console.log('[System Prompt Worker] ✅ Started - Listening for domain events');
 
-      channel.consume(SYSTEMPROMPT_QUEUE_NAME, async (msg) => {
+      channel.consume(SYSTEMPROMPT_QUEUE, async (msg) => {
         if (!msg) return;
 
         try {
           const event: DomainEvent = JSON.parse(msg.content.toString());
-          
+
           console.log(`\n[System Prompt Worker] 📨 Received event: ${event.actionType} (${event.data.entity}.${event.data.action})`);
 
           await this.processEvent(event);
@@ -102,9 +104,21 @@ export class SystemPromptWorker {
     try {
       const eventData = event.data;
 
-      
+
       if (eventData.entity === 'work_item' && eventData.action === 'create') {
         // TODO: Call AI to process work item creation (implementation pending)
+        const prisma = getPrismaClient();
+        const workItem = await prisma.workItem.findUnique({
+          where: {
+            id: Number(eventData.work_item_id)
+          }
+        })
+        const GtwyService = new GtwyServiceBuilder().build();
+        GtwyService.sendMessage({
+          message: `Process the work item creation. \n Title: ${workItem?.title} \n Description: ${workItem?.description} \n Status: ${workItem?.status} \n Priority: ${workItem?.priority} \n Assignee: ${workItem?.assigneeId}`,
+          threadId: eventData.work_item_id,
+          variables: { orgId: workItem?.orgId }
+        })
         console.log('[System Prompt Worker] 🤖 TODO: AI call for work_item.create');
       }
 
@@ -124,10 +138,10 @@ export class SystemPromptWorker {
 
       for (const prompt of matchedPrompts) {
         console.log(`\n[System Prompt Worker] 🔍 Evaluating prompt: "${prompt.name}"`);
-        
-        const conditionPassed = this.evaluator.evaluate(prompt.conditionCode, { 
+
+        const conditionPassed = this.evaluator.evaluate(prompt.conditionCode, {
           event: eventData,
-          workItemData 
+          workItemData
         });
 
         if (conditionPassed) {
@@ -151,7 +165,7 @@ export class SystemPromptWorker {
   private async handleSystemPromptEvent(event: DomainEvent): Promise<void> {
     try {
       const { action, entity_id, org_id } = event.data;
-     
+
 
 
       if (action !== 'create' && action !== 'update') {
@@ -159,17 +173,17 @@ export class SystemPromptWorker {
         return;
       }
 
-       
+
       const systemPromptPayload = await this.systemPromptsService.findById(Number(entity_id), Number(org_id));
 
-      if(!systemPromptPayload){
+      if (!systemPromptPayload) {
         throw new Error("System prompt doesn't exists")
       }
 
       console.log(`[System Prompt Worker] 🤖 Processing system_prompt ${action}`);
 
       // TODO: Call AI to generate conditionCode and refined promptTemplate
-      
+
       // const aiResponse = await systemPromptConditionGeneratorAI(systemPromptPayload);
 
       // Placeholder AI response for now

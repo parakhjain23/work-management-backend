@@ -1,5 +1,5 @@
+import { RAG_QUEUE, RagQueueMessage } from './queue.types.js';
 import { getRabbitMQChannel } from './rabbitmq.connection.js';
-import { RagQueueMessage, RAG_QUEUE_NAME } from './queue.types.js';
 
 /**
  * Purpose: Publish RAG indexing messages to queue (transport only, no business logic)
@@ -8,16 +8,16 @@ import { RagQueueMessage, RAG_QUEUE_NAME } from './queue.types.js';
 export async function publishToRagQueue(message: RagQueueMessage): Promise<void> {
   try {
     const channel = getRabbitMQChannel();
-    
+
     if (!channel) {
       console.error('[RAG Queue Publisher] Channel not available, message not published:', message);
       return;
     }
 
     const messageBuffer = Buffer.from(JSON.stringify(message));
-    
+
     const published = channel.sendToQueue(
-      RAG_QUEUE_NAME,
+      RAG_QUEUE,
       messageBuffer,
       {
         persistent: true,

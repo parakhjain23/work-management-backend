@@ -1,6 +1,6 @@
-import { StandardEvent } from './event.dispatcher.centralized.js';
+import { EVENTS_EXCHANGE } from '../queue/queue.types.js';
 import { getRabbitMQChannel } from '../queue/rabbitmq.connection.js';
-import { DOMAIN_EVENTS_EXCHANGE } from '../queue/queue.types.js';
+import { StandardEvent } from './event.dispatcher.centralized.js';
 
 /**
  * Purpose: Publish domain events to RabbitMQ exchange
@@ -9,7 +9,7 @@ import { DOMAIN_EVENTS_EXCHANGE } from '../queue/queue.types.js';
 export async function publishDomainEvent(event: StandardEvent): Promise<void> {
   try {
     const channel = getRabbitMQChannel();
-    
+
     if (!channel) {
       console.error('[Event Publisher] Channel not available, event not published:', {
         entity: event.entity,
@@ -27,10 +27,10 @@ export async function publishDomainEvent(event: StandardEvent): Promise<void> {
     };
 
     const messageBuffer = Buffer.from(JSON.stringify(serializedEvent));
-    
+
     // Publish to exchange with routing key '#' (broadcast to all bound queues)
     const published = channel.publish(
-      DOMAIN_EVENTS_EXCHANGE,
+      EVENTS_EXCHANGE,
       '', // Empty routing key for topic exchange with '#' binding
       messageBuffer,
       {

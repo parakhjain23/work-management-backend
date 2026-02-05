@@ -1,7 +1,7 @@
-import { Channel, ConsumeMessage } from 'amqplib';
-import { getRabbitMQChannel } from './rabbitmq.connection.js';
-import { RagQueueMessage, RAG_QUEUE_NAME } from './queue.types.js';
+import { ConsumeMessage } from 'amqplib';
 import { DomainEvent } from '../types/events.types.js';
+import { RAG_QUEUE, RagQueueMessage } from './queue.types.js';
+import { getRabbitMQChannel } from './rabbitmq.connection.js';
 
 /**
  * Purpose: Start consuming messages from RAG queue (transport only, no business logic)
@@ -11,15 +11,15 @@ export async function startRagQueueConsumer(
   onMessage: (message: RagQueueMessage) => Promise<void>
 ): Promise<void> {
   const channel = getRabbitMQChannel();
-  
+
   if (!channel) {
     throw new Error('[RAG Queue Consumer] Channel not available');
   }
 
-  console.log(`[RAG Queue Consumer] Starting consumer for queue: ${RAG_QUEUE_NAME}`);
+  console.log(`[RAG Queue Consumer] Starting consumer for queue: ${RAG_QUEUE}`);
 
   await channel.consume(
-    RAG_QUEUE_NAME,
+    RAG_QUEUE,
     async (msg: ConsumeMessage | null) => {
       if (!msg) {
         return;

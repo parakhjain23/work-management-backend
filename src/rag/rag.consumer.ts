@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { GtwyRagClient } from './core/rag.client.gtwy.js';
 import { getPrismaClient } from '../db/prisma.js';
+import { GtwyRagClient } from './core/rag.client.gtwy.js';
 
 const ragClient = new GtwyRagClient();
 

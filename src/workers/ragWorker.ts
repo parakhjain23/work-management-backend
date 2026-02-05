@@ -4,7 +4,7 @@
  */
 
 import { ConsumeMessage } from 'amqplib';
-import { RAG_QUEUE_NAME, RagQueueMessage } from '../queue/queue.types.js';
+import { RAG_QUEUE, RagQueueMessage } from '../queue/queue.types.js';
 import { getRabbitMQChannel } from '../queue/rabbitmq.connection.js';
 import { RagConsumer } from '../rag/consumer/rag.consumer.js';
 import { DomainEvent } from '../types/events.types.js';
@@ -26,7 +26,7 @@ export async function startRagWorker(): Promise<void> {
 
 
     await channel.consume(
-      RAG_QUEUE_NAME,
+      RAG_QUEUE,
       async (msg: ConsumeMessage | null) => {
         if (!msg) {
           return;

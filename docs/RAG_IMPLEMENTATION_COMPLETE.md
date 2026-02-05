@@ -440,7 +440,7 @@ const routingKey = `${event.data.entity}.${event.data.action}`;
 // Examples: work_item.create, work_item.update, category.update
 
 channel.publish(
-  DOMAIN_EVENTS_EXCHANGE,  // 'domain.events'
+  EVENTS_EXCHANGE,  // 'domain.events'
   routingKey,              // 'work_item.update'
   Buffer.from(JSON.stringify(event)),
   {
