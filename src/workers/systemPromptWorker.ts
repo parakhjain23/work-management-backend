@@ -102,16 +102,18 @@ export class SystemPromptWorker {
     try {
       const eventData = event.data;
 
-      // TODO: AI call for work_item.create - Special processing before condition evaluation
+      
       if (eventData.entity === 'work_item' && eventData.action === 'create') {
-        // AI call to process work item creation (implementation pending)
+        // TODO: Call AI to process work item creation (implementation pending)
         console.log('[System Prompt Worker] 🤖 TODO: AI call for work_item.create');
       }
+
+      // System prompt condition matching and event matching...
 
       const matchedPrompts = await this.matcher.matchEvent(eventData);
 
       if (matchedPrompts.length === 0) {
-        console.log(`[System Prompt Worker] ❌ No prompts matched for ${eventData.entity}.${eventData.action}`);
+        console.log("No matching prompts found!");
         return;
       }
 
@@ -131,7 +133,9 @@ export class SystemPromptWorker {
         if (conditionPassed) {
           console.log(`[System Prompt Worker] ✅ CONDITION MATCHED for: "${prompt.name}"`);
           console.log(`[System Prompt Worker] 📝 Prompt Template: ${prompt.promptTemplate}`);
-          // TODO: Execute AI with prompt template
+
+
+          // TODO: CALL AI with prompt template (same as workItem create wala)
         } else {
           console.log(`[System Prompt Worker] ❌ Condition failed for: "${prompt.name}"`);
         }
@@ -183,7 +187,7 @@ export class SystemPromptWorker {
 
         console.log("udpated system prompt")
       } else {
-        console.log('[System Prompt Worker] ⚠️ AI call not yet implemented - skipping update');
+        console.log('AI call failed');
       }
     } catch (error: any) {
       console.error('[System Prompt Worker] Error handling system_prompt event:', error.message);

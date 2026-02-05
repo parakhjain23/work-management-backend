@@ -187,7 +187,6 @@ model SystemPrompt {
   createdAt       DateTime    @default(now()) @map("created_at")
   updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at")
 
-  @@unique([orgId, name])
   @@index([orgId], name: "idx_system_prompts_org")
   @@index([eventType], name: "idx_system_prompts_event_type")
   @@index([orgId, eventType], name: "idx_system_prompts_org_event")
