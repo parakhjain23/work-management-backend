@@ -69,14 +69,6 @@ export class SystemPromptsService {
    * Purpose: Create new system prompt and emit event
    */
   async create(orgId: number, userId: number, data: CreateSystemPromptDto) {
-    const existing = await this.prisma.systemPrompt.findFirst({
-      where: { orgId, name: data.name }
-    });
-
-    if (existing) {
-      throw new Error('System prompt with this name already exists');
-    }
-
     const prompt = await this.prisma.systemPrompt.create({
       data: {
         orgId,
