@@ -25,6 +25,8 @@ export interface IntentRequest {
   intent: IntentType;
   payload: any;
   threadId: string;
+  org_id: number;
+  user_id: number;
 }
 
 // Payload contracts for each intent

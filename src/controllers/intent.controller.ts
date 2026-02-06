@@ -12,7 +12,7 @@ const intentRouter = new IntentRouter();
  */
 export const executeIntent = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { intent, payload, threadId } = req.body as IntentRequest;
+    const { intent, payload, threadId, org_id, user_id } = req.body as IntentRequest;
 
     // Validate request
     if (!intent) {
@@ -39,15 +39,31 @@ export const executeIntent = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Get user context
-    const orgId = Number(req.user!.org_id);
-    const userId = Number(req.user!.id);
+    if (!org_id) {
+      res.status(400).json({
+        success: false,
+        error: 'org_id is required'
+      });
+      return;
+    }
 
-    console.log(`[Intent API] Processing intent: ${intent} for org: ${orgId}, thread: ${threadId}`);
+    if (!user_id) {
+      res.status(400).json({
+        success: false,
+        error: 'user_id is required'
+      });
+      return;
+    }
+
+    // Get user context
+    const orgId = Number(org_id);
+    const userId = Number(user_id);
+
+    console.log(`[Intent API] Processing intent: ${intent} for org: ${orgId}, user: ${userId}, thread: ${threadId}`);
 
     // Route intent
     const result = await intentRouter.route(
-      { intent, payload, threadId },
+      { intent, payload, threadId, org_id, user_id },
       orgId,
       userId
     );
