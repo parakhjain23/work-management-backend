@@ -138,8 +138,9 @@ export class SystemPromptWorker {
 
       for (const prompt of matchedPrompts) {
         console.log(`\n[System Prompt Worker] 🔍 Evaluating prompt: "${prompt.name}"`);
-
-        const conditionPassed = this.evaluator.evaluate(prompt.conditionCode, {
+        
+        const conditionPassed = this.evaluator.evaluate(prompt.conditionCode, { 
+          actionType: event.actionType,
           event: eventData,
           workItemData
         });

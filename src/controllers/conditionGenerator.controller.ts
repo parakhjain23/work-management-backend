@@ -5,114 +5,70 @@ import { Request, Response } from 'express';
  * No authentication required - this is reference data for AI
  */
 export const getConditionGeneratorData = async (_req: Request, res: Response): Promise<void> => {
-  // Example event structure with actionType and data nesting
-  const exampleEvent = {
-    actionType: "work_item",
-    data: {
-      entity: "work_item",
-      action: "update",
-      entity_id: "8",
-      work_item_id: "8",
-      org_id: "1",
-      category_id: "4",
-      triggered_by: "user",
-      changedFields: ["rating"],
-      fieldChanges: {
-        rating: {
-          oldValue: 3,
-          newValue: 5,
-          fieldType: "custom_field"
-        }
-      },
-      timestamp: new Date().toISOString()
-    }
-  };
-
-  // Example data object as seen by condition code (flattened from event.data + workItemData)
-  const exampleDataForConditions = {
-    // Event fields
-    entity: "work_item",
-    action: "update",
-    changedFields: ["rating"],
+  // Data structure as seen by condition evaluator - flat structure with all fields at root level
+  const data = {
+    // Event fields (from context.event)
+    actionType: "<actionType>",
+    entity: "<entity>",
+    action: "<action>",
+    changedFields: ["<field_name>"],
     fieldChanges: {
-      rating: {
-        oldValue: 3,
-        newValue: 5,
-        fieldType: "custom_field"
+      "<field_name>": {
+        oldValue: "<old_value>",
+        newValue: "<new_value>",
+        fieldType: "<field_type>"
       }
     },
-    triggered_by: "user",
-    work_item_id: "8",
-    org_id: "1",
-    category_id: "4",
-    // Work item fields
-    id: "8",
-    title: "Login flow",
-    description: "Login flow is very slow.",
-    status: "CAPTURED",
-    priority: "",
-    categoryId: "4",
-    assigneeId: null,
-    createdBy: "1",
-    updatedBy: "1",
-    startDate: null,
-    dueDate: null,
-    parentId: null,
-    rootParentId: null,
-    externalId: null,
-    docId: null,
-    createdAt: "2026-02-02T09:07:30.535Z",
-    updatedAt: "2026-02-02T09:09:35.896Z",
+    triggered_by: "<triggered_by>",
+    work_item_id: "<work_item_id>",
+    org_id: "<org_id>",
+    category_id: "<category_id>",
+    
+    // Work item fields (from context.workItemData - flattened at root level)
+    id: "<id>",
+    title: "<title>",
+    description: "<description>",
+    status: "<status>",
+    priority: "<priority>",
+    categoryId: "<categoryId>",
+    assigneeId: "<assigneeId>",
+    createdBy: "<createdBy>",
+    updatedBy: "<updatedBy>",
+    startDate: "<startDate>",
+    dueDate: "<dueDate>",
+    parentId: "<parentId>",
+    rootParentId: "<rootParentId>",
+    externalId: "<externalId>",
+    docId: "<docId>",
+    createdAt: "<createdAt>",
+    updatedAt: "<updatedAt>",
+    
+    // Category (optional - can be null)
     category: {
-      id: "4",
-      name: "Feedback",
-      keyName: "feedback",
-      externalTool: "linear"
+      id: "<category.id>",
+      name: "<category.name>",
+      keyName: "<category.keyName>",
+      externalTool: "<category.externalTool>"
     },
+    
+    // Custom fields metadata
     customFieldsMetadata: [
       {
-        id: "5",
-        keyName: "dummy",
-        name: "dummy",
-        dataType: "text",
-        description: "to check the dummy custom field api working or not",
-        enums: "",
-        meta: null
-      },
-      {
-        id: "1",
-        keyName: "rating",
-        name: "Rating",
-        dataType: "number",
-        description: "rating",
-        enums: "1,2,3,4,5",
-        meta: {
-          field_type: "single-select"
-        }
-      },
-      {
-        id: "2",
-        keyName: "status",
-        name: "status",
-        dataType: "text",
-        description: "status of feedback",
-        enums: "approved,pending,rejected",
-        meta: {
-          field_type: "single-select"
-        }
+        id: "<customFieldsMetadata[].id>",
+        keyName: "<customFieldsMetadata[].keyName>",
+        name: "<customFieldsMetadata[].name>",
+        dataType: "<customFieldsMetadata[].dataType>",
+        description: "<customFieldsMetadata[].description>",
+        enums: "<customFieldsMetadata[].enums>",
+        meta: "<customFieldsMetadata[].meta>"
       }
     ],
+    
+    // Custom fields (key-value pairs)
     customFields: {
-      rating: 5,
-      status: "approved"
+      "<custom_field_key>": "<custom_field_value>"
     }
   };
 
-  res.json({
-    success: true,
-    eventStructure: exampleEvent,
-    conditionDataStructure: exampleDataForConditions,
-    description: "Event structure shows how events are emitted with actionType. Condition data structure shows the flattened data object available in condition code evaluation.",
-    usage: "Use conditionDataStructure to generate JavaScript condition code that returns boolean. All fields are at root level in the data object."
-  });
+  res.json(data);
 };

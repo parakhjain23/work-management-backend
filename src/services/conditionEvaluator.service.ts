@@ -6,6 +6,7 @@
 import { EventData } from '../types/events.types.js';
 
 export interface EvaluationContext {
+  actionType: string;
   event: EventData;
   workItemData?: any;
 }
@@ -26,6 +27,7 @@ export class ConditionEvaluator {
       // Build data object with event fields + full work item data
       const data: any = {
         // Event fields (for matching event type and changed fields)
+        actionType: context.actionType,
         entity: context.event.entity,
         action: context.event.action,
         changedFields: context.event.changedFields,
