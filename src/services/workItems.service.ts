@@ -291,6 +291,10 @@ export class WorkItemsService {
       }
     });
 
+    if (data.customFieldValues && Object.keys(data.customFieldValues).length > 0 && data.categoryId) {
+      await this.customFieldsService.updateValues(workItem.id, orgId, data.customFieldValues);
+    }
+
     if (changes.length > 0) {
       await this.prisma.workItemLog.create({
         data: {

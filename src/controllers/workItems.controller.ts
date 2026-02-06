@@ -145,9 +145,9 @@ export const updateWorkItem = async (req: Request, res: Response): Promise<void>
       return;
     }
     const workItemId = Number(workItemIdParam);
-    const { title, description, status, priority, categoryId, assigneeId, startDate, dueDate, externalId, createdBy, parentId, rootParentId, docId } = req.body;
+    const { title, description, status, priority, categoryId, assigneeId, startDate, dueDate, externalId, createdBy, parentId, rootParentId, docId, customFieldValues } = req.body;
 
-    if (!title && !description && !status && !priority && !categoryId && assigneeId === undefined && !startDate && !dueDate && !externalId && createdBy === undefined && parentId === undefined && rootParentId === undefined && !docId) {
+    if (!title && !description && !status && !priority && !categoryId && assigneeId === undefined && !startDate && !dueDate && !externalId && createdBy === undefined && parentId === undefined && rootParentId === undefined && !docId && !customFieldValues) {
       res.status(400).json({
         success: false,
         error: 'At least one field is required'
@@ -171,7 +171,8 @@ export const updateWorkItem = async (req: Request, res: Response): Promise<void>
       createdBy: createdBy !== undefined ? (createdBy ? Number(createdBy) : null) : undefined,
       parentId: parentId !== undefined ? (parentId ? Number(parentId) : null) : undefined,
       rootParentId: rootParentId !== undefined ? (rootParentId ? Number(rootParentId) : null) : undefined,
-      docId: docId !== undefined ? docId : undefined
+      docId: docId !== undefined ? docId : undefined,
+      customFieldValues
     });
 
     res.json({

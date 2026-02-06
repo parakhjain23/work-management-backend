@@ -192,7 +192,8 @@ export class GtwyRagClient {
           collection_id: this.collectionId,
           // owner_id: params.ownerId,
           owner_id: "59162",
-          query: params.query
+          query: params.query,
+          score: 0.8
         }
       );
 

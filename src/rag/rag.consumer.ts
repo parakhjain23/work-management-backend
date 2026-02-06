@@ -6,7 +6,7 @@ const ragClient = new GtwyRagClient();
 
 export const ragSearch = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { query, limit, minScore } = req.body;
+    const { query, limit, orgId } = req.body;
 
     if (!query || typeof query !== 'string') {
       res.status(400).json({
@@ -16,16 +16,16 @@ export const ragSearch = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if (!req.user || !req.user.org_id) {
+    if (!orgId) {
       res.status(401).json({
         success: false,
-        error: 'Authentication required'
+        error: 'orgId/OwnerId is required'
       });
       return;
     }
 
     const searchLimit = typeof limit === 'number' ? limit : 5;
-    const ownerId = req.user.org_id.toString();
+    const ownerId = orgId.toString();
 
     // Query GTWY RAG API
     const results = await ragClient.query({
@@ -40,7 +40,8 @@ export const ragSearch = async (req: Request, res: Response): Promise<void> => {
     if (docIds.length === 0) {
       res.json({
         success: true,
-        work_item_ids: []
+        work_items: [],
+        message: "No relevant work items found"
       });
       return;
     }
@@ -50,17 +51,16 @@ export const ragSearch = async (req: Request, res: Response): Promise<void> => {
     const workItems = await prisma.workItem.findMany({
       where: {
         docId: { in: docIds },
-        orgId: req.user.org_id
+        orgId: Number(orgId)
       },
-      select: { id: true },
+      select: { id: true, title: true, description: true, status: true, priority: true, dueDate: true, assigneeId: true },
       orderBy: { id: 'desc' }
     });
 
-    const workItemIds = workItems.map(item => Number(item.id));
-
     res.json({
       success: true,
-      work_item_ids: workItemIds
+      work_items: workItems,
+      message: "Found relevant work items"
     });
 
   } catch (error) {
