@@ -1,16 +1,23 @@
 import { WorkItemStatus, WorkItemPriority } from '@prisma/client';
 
 // Intent types that AI can execute
+// Value-based operations: work_item.* (affects work item field values including custom fields)
+// Entity-based operations: category.*, custom_field_meta.* (creates/modifies entities)
 export enum IntentType {
-  CREATE_WORK_ITEM = 'create_work_item',
-  UPDATE_WORK_ITEM = 'update_work_item',
-  DELETE_WORK_ITEM = 'delete_work_item',
-  ADD_CHILD_WORK_ITEM = 'add_child_work_item',
-  CREATE_CATEGORY = 'create_category',
-  UPDATE_CATEGORY = 'update_category',
-  CREATE_CUSTOM_FIELD = 'create_custom_field',
-  UPDATE_CUSTOM_FIELD_VALUE = 'update_custom_field_value',
-  UPDATE_WORK_ITEM_STATUS = 'update_work_item_status'
+  // Work Item Value Operations (includes custom field values)
+  CREATE_WORK_ITEM = 'work_item.create',
+  UPDATE_WORK_ITEM = 'work_item.update',
+  DELETE_WORK_ITEM = 'work_item.delete',
+  
+  // Category Entity Operations
+  CREATE_CATEGORY = 'category.create',
+  UPDATE_CATEGORY = 'category.update',
+  DELETE_CATEGORY = 'category.delete',
+  
+  // Custom Field Metadata Operations
+  CREATE_CUSTOM_FIELD_META = 'custom_field_meta.create',
+  UPDATE_CUSTOM_FIELD_META = 'custom_field_meta.update',
+  DELETE_CUSTOM_FIELD_META = 'custom_field_meta.delete'
 }
 
 // Base intent request
@@ -34,6 +41,9 @@ export interface CreateWorkItemPayload {
   root_parent_id?: number;
   external_id?: string;
   created_by?: number;
+  custom_field_values?: {
+    [key_name: string]: any;
+  };
 }
 
 export interface UpdateWorkItemPayload {
@@ -52,6 +62,9 @@ export interface UpdateWorkItemPayload {
     parent_id?: number | null;
     root_parent_id?: number | null;
     doc_id?: string | null;
+    custom_field_values?: {
+      [key_name: string]: any;
+    };
   };
 }
 
@@ -59,12 +72,8 @@ export interface DeleteWorkItemPayload {
   work_item_id: number;
 }
 
-export interface AddChildWorkItemPayload {
-  parent_id: number;
-  title: string;
-  description?: string;
-  priority?: WorkItemPriority;
-  status?: WorkItemStatus;
+export interface DeleteCategoryPayload {
+  category_id: number;
 }
 
 export interface CreateCategoryPayload {
@@ -81,7 +90,7 @@ export interface UpdateCategoryPayload {
   };
 }
 
-export interface CreateCustomFieldPayload {
+export interface CreateCustomFieldMetaPayload {
   category_id: number;
   name: string;
   key_name: string;
@@ -91,16 +100,18 @@ export interface CreateCustomFieldPayload {
   meta?: any;
 }
 
-export interface UpdateCustomFieldValuePayload {
-  work_item_id: number;
-  values: {
-    [key_name: string]: any;
+export interface UpdateCustomFieldMetaPayload {
+  custom_field_meta_id: number;
+  fields: {
+    name?: string;
+    description?: string;
+    enums?: string;
+    meta?: any;
   };
 }
 
-export interface UpdateWorkItemStatusPayload {
-  work_item_id: number;
-  status: WorkItemStatus;
+export interface DeleteCustomFieldMetaPayload {
+  custom_field_meta_id: number;
 }
 
 // Intent response

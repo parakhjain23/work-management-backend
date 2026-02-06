@@ -9,12 +9,12 @@ import {
   CreateWorkItemPayload,
   UpdateWorkItemPayload,
   DeleteWorkItemPayload,
-  AddChildWorkItemPayload,
   CreateCategoryPayload,
   UpdateCategoryPayload,
-  CreateCustomFieldPayload,
-  UpdateCustomFieldValuePayload,
-  UpdateWorkItemStatusPayload
+  DeleteCategoryPayload,
+  CreateCustomFieldMetaPayload,
+  UpdateCustomFieldMetaPayload,
+  DeleteCustomFieldMetaPayload
 } from './intent.types.js';
 import { WorkItemsService } from '../services/workItems.service.js';
 import { CategoriesService } from '../services/categories.service.js';
@@ -55,6 +55,7 @@ export class IntentRouter {
 
       // Route to handler
       switch (request.intent) {
+        // Work Item Value Operations
         case IntentType.CREATE_WORK_ITEM:
           return await this.handleCreateWorkItem(request.payload, orgId, userId);
         
@@ -64,23 +65,25 @@ export class IntentRouter {
         case IntentType.DELETE_WORK_ITEM:
           return await this.handleDeleteWorkItem(request.payload, orgId, userId);
         
-        case IntentType.ADD_CHILD_WORK_ITEM:
-          return await this.handleAddChildWorkItem(request.payload, orgId, userId);
-        
+        // Category Entity Operations
         case IntentType.CREATE_CATEGORY:
           return await this.handleCreateCategory(request.payload, orgId, userId);
         
         case IntentType.UPDATE_CATEGORY:
           return await this.handleUpdateCategory(request.payload, orgId, userId);
         
-        case IntentType.CREATE_CUSTOM_FIELD:
-          return await this.handleCreateCustomField(request.payload, orgId, userId);
+        case IntentType.DELETE_CATEGORY:
+          return await this.handleDeleteCategory(request.payload, orgId, userId);
         
-        case IntentType.UPDATE_CUSTOM_FIELD_VALUE:
-          return await this.handleUpdateCustomFieldValue(request.payload, orgId, userId);
+        // Custom Field Metadata Operations
+        case IntentType.CREATE_CUSTOM_FIELD_META:
+          return await this.handleCreateCustomFieldMeta(request.payload, orgId, userId);
         
-        case IntentType.UPDATE_WORK_ITEM_STATUS:
-          return await this.handleUpdateWorkItemStatus(request.payload, orgId, userId);
+        case IntentType.UPDATE_CUSTOM_FIELD_META:
+          return await this.handleUpdateCustomFieldMeta(request.payload, orgId, userId);
+        
+        case IntentType.DELETE_CUSTOM_FIELD_META:
+          return await this.handleDeleteCustomFieldMeta(request.payload, orgId, userId);
         
         default:
           return {
@@ -118,7 +121,7 @@ export class IntentRouter {
   }
 
   /**
-   * CREATE_WORK_ITEM handler
+   * CREATE_WORK_ITEM handler (includes custom field values)
    */
   private async handleCreateWorkItem(
     payload: CreateWorkItemPayload,
@@ -143,7 +146,8 @@ export class IntentRouter {
       parentId: payload.parent_id ? Number(payload.parent_id) : undefined,
       rootParentId: payload.root_parent_id ? Number(payload.root_parent_id) : undefined,
       externalId: payload.external_id,
-      createdBy: payload.created_by ? Number(payload.created_by) : undefined
+      createdBy: payload.created_by ? Number(payload.created_by) : undefined,
+      customFieldValues: payload.custom_field_values
     });
 
     // Event is emitted by service layer
@@ -158,7 +162,7 @@ export class IntentRouter {
   }
 
   /**
-   * UPDATE_WORK_ITEM handler
+   * UPDATE_WORK_ITEM handler (includes custom field values)
    */
   private async handleUpdateWorkItem(
     payload: UpdateWorkItemPayload,
@@ -176,7 +180,7 @@ export class IntentRouter {
 
     const workItemId = Number(payload.work_item_id);
 
-    // Execute service
+    // Execute service (now includes custom field values)
     const workItem = await this.workItemsService.update(workItemId, orgId, userId, {
       title: payload.fields.title,
       description: payload.fields.description,
@@ -190,7 +194,8 @@ export class IntentRouter {
       createdBy: payload.fields.created_by !== undefined ? (payload.fields.created_by ? Number(payload.fields.created_by) : null) : undefined,
       parentId: payload.fields.parent_id !== undefined ? (payload.fields.parent_id ? Number(payload.fields.parent_id) : null) : undefined,
       rootParentId: payload.fields.root_parent_id !== undefined ? (payload.fields.root_parent_id ? Number(payload.fields.root_parent_id) : null) : undefined,
-      docId: payload.fields.doc_id !== undefined ? payload.fields.doc_id : undefined
+      docId: payload.fields.doc_id !== undefined ? payload.fields.doc_id : undefined,
+      customFieldValues: payload.fields.custom_field_values
     });
 
     // Event is emitted by service layer
@@ -232,39 +237,28 @@ export class IntentRouter {
   }
 
   /**
-   * ADD_CHILD_WORK_ITEM handler
+   * DELETE_CATEGORY handler
    */
-  private async handleAddChildWorkItem(
-    payload: AddChildWorkItemPayload,
+  private async handleDeleteCategory(
+    payload: DeleteCategoryPayload,
     orgId: number,
     userId: number
   ): Promise<IntentResponse> {
-    if (!payload.parent_id) {
-      return { success: false, error: 'parent_id is required' };
+    if (!payload.category_id) {
+      return { success: false, error: 'category_id is required' };
     }
 
-    if (!payload.title) {
-      return { success: false, error: 'title is required' };
-    }
-
-    const parentId = Number(payload.parent_id);
+    const categoryId = Number(payload.category_id);
 
     // Execute service
-    const workItem = await this.workItemsService.createChild(parentId, orgId, userId, {
-      categoryId: Number(0), // Will be inherited from parent
-      title: payload.title,
-      description: payload.description,
-      status: payload.status,
-      priority: payload.priority
-    });
+    await this.categoriesService.delete(categoryId, orgId);
 
-    // Event is emitted by service layer (create method)
+    // Event is emitted by service layer
     return {
       success: true,
       result: {
-        type: 'child_work_item_created',
-        id: workItem.id,
-        data: workItem
+        type: 'category_deleted',
+        id: categoryId
       }
     };
   }
@@ -335,10 +329,10 @@ export class IntentRouter {
   }
 
   /**
-   * CREATE_CUSTOM_FIELD handler
+   * CREATE_CUSTOM_FIELD_META handler
    */
-  private async handleCreateCustomField(
-    payload: CreateCustomFieldPayload,
+  private async handleCreateCustomFieldMeta(
+    payload: CreateCustomFieldMetaPayload,
     orgId: number,
     userId: number
   ): Promise<IntentResponse> {
@@ -362,7 +356,7 @@ export class IntentRouter {
     return {
       success: true,
       result: {
-        type: 'custom_field_created',
+        type: 'custom_field_meta_created',
         id: field.id,
         data: field
       }
@@ -370,63 +364,65 @@ export class IntentRouter {
   }
 
   /**
-   * UPDATE_CUSTOM_FIELD_VALUE handler
+   * UPDATE_CUSTOM_FIELD_META handler
    */
-  private async handleUpdateCustomFieldValue(
-    payload: UpdateCustomFieldValuePayload,
+  private async handleUpdateCustomFieldMeta(
+    payload: UpdateCustomFieldMetaPayload,
     orgId: number,
     userId: number
   ): Promise<IntentResponse> {
-    if (!payload.work_item_id) {
-      return { success: false, error: 'work_item_id is required' };
+    if (!payload.custom_field_meta_id) {
+      return { success: false, error: 'custom_field_meta_id is required' };
     }
 
-    if (!payload.values || Object.keys(payload.values).length === 0) {
-      return { success: false, error: 'values object is required' };
+    if (!payload.fields || Object.keys(payload.fields).length === 0) {
+      return { success: false, error: 'fields object is required' };
     }
 
-    const workItemId = Number(payload.work_item_id);
+    const customFieldMetaId = Number(payload.custom_field_meta_id);
 
     // Execute service
-    const values = await this.customFieldsService.updateValues(workItemId, orgId, payload.values);
-
-    // Event is emitted by service layer
-    return {
-      success: true,
-      result: {
-        type: 'custom_field_values_updated',
-        id: workItemId,
-        data: values
-      }
-    };
-  }
-
-  /**
-   * UPDATE_WORK_ITEM_STATUS handler (convenience intent)
-   */
-  private async handleUpdateWorkItemStatus(
-    payload: UpdateWorkItemStatusPayload,
-    orgId: number,
-    userId: number
-  ): Promise<IntentResponse> {
-    if (!payload.work_item_id || !payload.status) {
-      return { success: false, error: 'work_item_id and status are required' };
-    }
-
-    const workItemId = Number(payload.work_item_id);
-
-    // Execute service
-    const workItem = await this.workItemsService.update(workItemId, orgId, userId, {
-      status: payload.status
+    const field = await this.customFieldsService.updateMeta(customFieldMetaId, orgId, userId, {
+      name: payload.fields.name,
+      description: payload.fields.description,
+      enums: payload.fields.enums,
+      meta: payload.fields.meta
     });
 
     // Event is emitted by service layer
     return {
       success: true,
       result: {
-        type: 'work_item_status_updated',
-        id: workItem.id,
-        data: workItem
+        type: 'custom_field_meta_updated',
+        id: field.id,
+        data: field
+      }
+    };
+  }
+
+  /**
+   * DELETE_CUSTOM_FIELD_META handler
+   */
+  private async handleDeleteCustomFieldMeta(
+    payload: DeleteCustomFieldMetaPayload,
+    orgId: number,
+    userId: number
+  ): Promise<IntentResponse> {
+    if (!payload.custom_field_meta_id) {
+      return { success: false, error: 'custom_field_meta_id is required' };
+    }
+
+    const customFieldMetaId = Number(payload.custom_field_meta_id);
+
+    // Execute service
+    await this.customFieldsService.deleteMeta(customFieldMetaId, orgId);
+
+    // Event is emitted by service layer
+    return {
+      success: true,
+      result: {
+        type: 'custom_field_meta_deleted',
+        id: customFieldMetaId
       }
     };
   }
